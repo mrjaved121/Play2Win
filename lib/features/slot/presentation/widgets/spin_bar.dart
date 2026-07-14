@@ -63,7 +63,7 @@ class SpinBar extends StatelessWidget {
                   label: 'STOP',
                   subtitle: autoSpinRemaining != null ? '$autoSpinRemaining SPINS LEFT' : null,
                   gradient: const LinearGradient(
-                    colors: <Color>[AppColors.error, Color(0xFF7A1420)],
+                    colors: <Color>[AppColors.error, Color(0xFF801F2E)],
                   ),
                   glowColor: AppColors.error,
                   size: GradientButtonSize.large,

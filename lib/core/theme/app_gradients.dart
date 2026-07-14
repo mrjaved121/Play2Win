@@ -11,7 +11,7 @@ abstract final class AppGradients {
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
     colors: <Color>[
-      Color(0xFF1A0F2E),
+      Color(0xFF1D0F35),
       AppColors.background,
       AppColors.backgroundDeep,
     ],
@@ -78,7 +78,7 @@ abstract final class AppGradients {
   static const LinearGradient jackpot = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: <Color>[AppColors.jackpotRed, Color(0xFF5C0913)],
+    colors: <Color>[AppColors.jackpotRed, Color(0xFF3D0A1E)],
   );
 
   /// Shimmer sweep used for loading placeholders.

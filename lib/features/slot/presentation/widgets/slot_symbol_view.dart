@@ -47,9 +47,9 @@ class SlotSymbolView extends StatelessWidget {
           gradient: const LinearGradient(
             colors: <Color>[
               Color(0xFFFF5C5C),
-              Color(0xFFFFC94A),
-              Color(0xFF4CC9FF),
-              Color(0xFFB14CFF),
+              Color(0xFFF2B94D),
+              Color(0xFF4CD3E0),
+              Color(0xFFFF3D78),
             ],
           ),
         );

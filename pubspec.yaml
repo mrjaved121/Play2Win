@@ -80,23 +80,23 @@ flutter_launcher_icons:
   web:
     generate: true
     image_path: assets/icon/icon.png
-    background_color: "#0F081A"
-    theme_color: "#0F081A"
+    background_color: "#170B26"
+    theme_color: "#170B26"
   windows:
     generate: true
     image_path: assets/icon/icon.png
 
 # Regenerate after changing assets/icon/*: `dart run flutter_native_splash:create`
 flutter_native_splash:
-  color: "#0F081A"
+  color: "#170B26"
   image: assets/icon/icon_foreground.png
-  color_dark: "#0F081A"
+  color_dark: "#170B26"
   image_dark: assets/icon/icon_foreground.png
   android_12:
     image: assets/icon/icon_foreground.png
-    icon_background_color: "#0F081A"
+    icon_background_color: "#170B26"
     image_dark: assets/icon/icon_foreground.png
-    icon_background_color_dark: "#0F081A"
+    icon_background_color_dark: "#170B26"
   web: false
 
 # For information on the generic Dart part of this file, see the
