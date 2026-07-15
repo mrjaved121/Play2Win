@@ -43,8 +43,6 @@ dependencies:
   hive_flutter: ^1.1.0
   get_it: ^9.2.1
   flutter_animate: ^4.5.2
-  rive: ^0.14.9
-  lottie: ^3.5.1
   flame: ^1.37.0
   just_audio: ^0.10.6
   confetti: ^0.8.0
@@ -115,8 +113,6 @@ flutter:
     - assets/images/symbols/
     - assets/images/icons/
     - assets/images/backgrounds/
-    - assets/animations/lottie/
-    - assets/animations/rive/
     - assets/audio/sfx/
     - assets/audio/music/
 
