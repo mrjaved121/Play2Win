@@ -1,26 +1,112 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
+  --bh-page: #f9f9f7;
+  --bh-surface: #fcfcfb;
+  --bh-surface-raised: #ffffff;
+  --bh-line: rgba(11, 11, 11, 0.10);
+  --bh-ink: #0b0b0b;
+  --bh-ink-secondary: #52514e;
+  --bh-ink-muted: #898781;
+  --bh-grid: #e1e0d9;
+  --bh-axis: #c3c2b7;
+
+  --bh-accent: #2a78d6;
+  --bh-accent-hover: #184f95;
+  --bh-accent-soft: #cde2fb;
+
+  --bh-good: #0ca30c;
+  --bh-warning: #fab219;
+  --bh-serious: #ec835a;
+  --bh-critical: #d03b3b;
+
+  --bh-series-1: #2a78d6;
+  --bh-series-2: #008300;
+  --bh-series-3: #e87ba4;
+  --bh-series-4: #eda100;
+  --bh-series-5: #1baf7a;
+  --bh-series-6: #eb6834;
+  --bh-series-7: #4a3aa7;
+  --bh-series-8: #e34948;
+}
+
+.dark {
+  color-scheme: dark;
+  --bh-page: #0d0d0d;
+  --bh-surface: #1a1a19;
+  --bh-surface-raised: #232322;
+  --bh-line: rgba(255, 255, 255, 0.10);
+  --bh-ink: #ffffff;
+  --bh-ink-secondary: #c3c2b7;
+  --bh-ink-muted: #898781;
+  --bh-grid: #2c2c2a;
+  --bh-axis: #383835;
+
+  --bh-accent: #3987e5;
+  --bh-accent-hover: #86b6ef;
+  --bh-accent-soft: #184f95;
+
+  --bh-good: #0ca30c;
+  --bh-warning: #fab219;
+  --bh-serious: #ec835a;
+  --bh-critical: #e66767;
+
+  --bh-series-1: #3987e5;
+  --bh-series-2: #008300;
+  --bh-series-3: #d55181;
+  --bh-series-4: #c98500;
+  --bh-series-5: #199e70;
+  --bh-series-6: #d95926;
+  --bh-series-7: #9085e9;
+  --bh-series-8: #e66767;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-page: var(--bh-page);
+  --color-surface: var(--bh-surface);
+  --color-surface-raised: var(--bh-surface-raised);
+  --color-line: var(--bh-line);
+  --color-ink: var(--bh-ink);
+  --color-ink-secondary: var(--bh-ink-secondary);
+  --color-ink-muted: var(--bh-ink-muted);
+  --color-grid: var(--bh-grid);
+  --color-axis: var(--bh-axis);
+
+  --color-accent: var(--bh-accent);
+  --color-accent-hover: var(--bh-accent-hover);
+  --color-accent-soft: var(--bh-accent-soft);
+
+  --color-good: var(--bh-good);
+  --color-warning: var(--bh-warning);
+  --color-serious: var(--bh-serious);
+  --color-critical: var(--bh-critical);
+
+  --color-series-1: var(--bh-series-1);
+  --color-series-2: var(--bh-series-2);
+  --color-series-3: var(--bh-series-3);
+  --color-series-4: var(--bh-series-4);
+  --color-series-5: var(--bh-series-5);
+  --color-series-6: var(--bh-series-6);
+  --color-series-7: var(--bh-series-7);
+  --color-series-8: var(--bh-series-8);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+body {
+  background: var(--bh-page);
+  color: var(--bh-ink);
+  font-family: var(--font-sans), system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Tabular figures for table cells / axis ticks that must align vertically. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+::selection {
+  background: var(--bh-accent-soft);
 }
