@@ -28,6 +28,7 @@ import '../widgets/daily_bonus_card.dart';
 import '../widgets/floating_win_text.dart';
 import '../widgets/home_header.dart';
 import '../widgets/jackpot_banner.dart';
+import '../widgets/low_balance_sheet.dart';
 import '../widgets/near_miss_banner.dart';
 import '../widgets/promo_ticker.dart';
 import '../widgets/quick_status_row.dart';
@@ -137,7 +138,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
     });
 
     final outcome = notifier.startSpin();
-    if (outcome == null) return;
+    if (outcome == null) {
+      unawaited(showLowBalanceSheet(context));
+      return;
+    }
     if (!wasFreeSpin) {
       wallet.record(type: TransactionType.loss, label: 'Spin Bet', amount: -betAtSpinStart);
     }

@@ -10,11 +10,23 @@ import '../../domain/entities/game_catalog_entry.dart';
 /// give a "Coming soon" acknowledgement rather than a dead, silent tap —
 /// makes it obvious the app noticed you tapped instead of feeling broken.
 class GameCard extends StatelessWidget {
-  const GameCard({required this.entry, this.onTap, this.onLockedTap, super.key});
+  const GameCard({
+    required this.entry,
+    this.onTap,
+    this.onLockedTap,
+    this.isFavorite = false,
+    this.onToggleFavorite,
+    super.key,
+  });
 
   final GameCatalogEntry entry;
   final VoidCallback? onTap;
   final VoidCallback? onLockedTap;
+
+  /// Whether [entry] is in the player's favorites. Only live games can be
+  /// favorited — [onToggleFavorite] is null for locked tiles.
+  final bool isFavorite;
+  final VoidCallback? onToggleFavorite;
 
   static const double width = 136;
 
@@ -35,11 +47,23 @@ class GameCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              Align(
-                alignment: Alignment.topRight,
-                child: live
-                    ? BadgePill(label: entry.badgeLabel ?? 'PLAY', color: entry.accentColor, filled: true)
-                    : const BadgePill(label: 'SOON', icon: Icons.lock_rounded, color: AppColors.textMuted),
+              Row(
+                children: <Widget>[
+                  if (live && onToggleFavorite != null)
+                    PressableScale(
+                      onTap: onToggleFavorite,
+                      playClickSound: false,
+                      child: Icon(
+                        isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                        size: 18,
+                        color: isFavorite ? AppColors.neonPurple : AppColors.textMuted,
+                      ),
+                    ),
+                  const Spacer(),
+                  live
+                      ? BadgePill(label: entry.badgeLabel ?? 'PLAY', color: entry.accentColor, filled: true)
+                      : const BadgePill(label: 'SOON', icon: Icons.lock_rounded, color: AppColors.textMuted),
+                ],
               ),
               const SizedBox(height: AppSpacing.sm),
               Center(

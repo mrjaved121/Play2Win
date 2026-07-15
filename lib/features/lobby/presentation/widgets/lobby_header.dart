@@ -5,23 +5,23 @@ import '../../../../core/routing/route_names.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../core/widgets/widgets.dart';
 
-/// Top of the Lobby: player avatar + greeting, balance/jackpot readouts,
-/// and quick actions (notifications, settings). Mirrors [HomeHeader]'s
-/// visual language so switching between the lobby and the slot machine
-/// doesn't feel like a different app.
+/// Top of the Lobby: player avatar + greeting, a persistent search action,
+/// balance/jackpot readouts and a quick "add coins" shortcut into the
+/// Store. Mirrors [HomeHeader]'s visual language so switching between the
+/// lobby and the slot machine doesn't feel like a different app.
 class LobbyHeader extends StatelessWidget {
   const LobbyHeader({
     required this.playerName,
     required this.balance,
     required this.jackpot,
-    this.notificationCount = 3,
+    this.onSearchTap,
     super.key,
   });
 
   final String playerName;
   final int balance;
   final int jackpot;
-  final int notificationCount;
+  final VoidCallback? onSearchTap;
 
   @override
   Widget build(BuildContext context) {
@@ -50,11 +50,7 @@ class LobbyHeader extends StatelessWidget {
                 ],
               ),
             ),
-            IconActionButton(
-              icon: Icons.notifications_rounded,
-              badgeCount: notificationCount,
-              onTap: () {},
-            ),
+            IconActionButton(icon: Icons.search_rounded, onTap: onSearchTap),
             const SizedBox(width: AppSpacing.sm),
             IconActionButton(
               icon: Icons.settings_rounded,
@@ -78,6 +74,21 @@ class LobbyHeader extends StatelessWidget {
               icon: Icons.emoji_events_rounded,
               accentColor: AppColors.warning,
               highlight: true,
+            ),
+            const Spacer(),
+            PressableScale(
+              onTap: () => context.goNamed(RouteNames.store),
+              child: Container(
+                width: 40,
+                height: 40,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  gradient: AppGradients.gold,
+                  shape: BoxShape.circle,
+                  boxShadow: AppShadows.goldGlow,
+                ),
+                child: const Icon(Icons.add_rounded, color: AppColors.textOnGold, size: 26),
+              ),
             ),
           ],
         ),
