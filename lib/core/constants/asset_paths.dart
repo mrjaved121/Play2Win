@@ -37,12 +37,12 @@ abstract final class AssetPaths {
   // ---------------------------------------------------------------------
   static const String sfx = 'assets/audio/sfx';
   static const String music = 'assets/audio/music';
-  static const String sfxButtonClick = '$sfx/button_click.wav';
-  static const String sfxSpin = '$sfx/spin.wav';
-  static const String sfxReelStop = '$sfx/reel_stop.wav';
-  static const String sfxWin = '$sfx/win.wav';
-  static const String sfxBigWin = '$sfx/big_win.wav';
-  static const String sfxJackpot = '$sfx/jackpot.wav';
-  static const String sfxCoinCollect = '$sfx/coin_collect.wav';
-  static const String musicBackground = '$music/background_loop.wav';
+  static const String sfxButtonClick = '$sfx/button_click.m4a';
+  static const String sfxSpin = '$sfx/spin.m4a';
+  static const String sfxReelStop = '$sfx/reel_stop.m4a';
+  static const String sfxWin = '$sfx/win.m4a';
+  static const String sfxBigWin = '$sfx/big_win.m4a';
+  static const String sfxJackpot = '$sfx/jackpot.m4a';
+  static const String sfxCoinCollect = '$sfx/coin_collect.m4a';
+  static const String musicBackground = '$music/background_loop.m4a';
 }
