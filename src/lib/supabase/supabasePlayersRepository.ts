@@ -45,4 +45,31 @@ export const supabasePlayersRepository: PlayersRepository = {
     if (error) throw new Error(`Supabase players.updateStatus failed: ${error.message}`);
     return mapPlayerRow(data);
   },
+
+  async adjustBalance(id: string, { amount, note }) {
+    const supabase = getSupabaseServerClient();
+    const { data: existing, error: findError } = await supabase
+      .from("players")
+      .select("credit_balance")
+      .eq("id", id)
+      .maybeSingle();
+    if (findError) throw new Error(`Supabase players.adjustBalance lookup failed: ${findError.message}`);
+    if (!existing) throw new Error(`Player ${id} not found`);
+
+    const newBalance = Math.max(0, Number(existing.credit_balance) + amount);
+    const { data, error } = await supabase
+      .from("players")
+      .update({ credit_balance: newBalance })
+      .eq("id", id)
+      .select("*")
+      .single();
+    if (error) throw new Error(`Supabase players.adjustBalance failed: ${error.message}`);
+
+    const { error: txnError } = await supabase
+      .from("transactions")
+      .insert({ player_id: id, type: "bonus", status: "completed", amount, note: note ?? null });
+    if (txnError) throw new Error(`Supabase players.adjustBalance transaction insert failed: ${txnError.message}`);
+
+    return mapPlayerRow(data);
+  },
 };

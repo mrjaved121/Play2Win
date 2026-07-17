@@ -31,7 +31,11 @@ create table if not exists games (
   total_wagered numeric not null default 0,
   total_payout numeric not null default 0,
   release_date date not null default current_date,
-  accent_seed integer not null default 0
+  accent_seed integer not null default 0,
+  -- Which built-in mobile-app screen this row plays as, if any. Null means
+  -- a "coming soon" catalog entry with no real screen behind it yet. See
+  -- src/app/api/public/games (the Lobby's catalog feed).
+  app_entry_point text check (app_entry_point in ('slots', 'crash', 'wheel', 'scratch'))
 );
 
 create table if not exists transactions (
@@ -41,11 +45,120 @@ create table if not exists transactions (
   type text not null check (type in ('deposit', 'withdrawal', 'wager', 'payout', 'bonus')),
   status text not null default 'completed' check (status in ('completed', 'pending', 'failed', 'reversed')),
   amount numeric not null,
+  -- Freeform context for admin-initiated transactions (e.g. why a 'bonus'
+  -- balance adjustment was made) — null for ordinary gameplay transactions.
+  note text,
   created_at timestamptz not null default now()
 );
 
 create index if not exists transactions_created_at_idx on transactions (created_at desc);
 create index if not exists transactions_player_id_idx on transactions (player_id);
+
+-- Powers the admin "Help & Support" page: short text entries shown in the
+-- mobile app, ordered by display_order (ties broken by newest first).
+create table if not exists news (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  content text not null,
+  is_active boolean not null default true,
+  display_order integer not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists news_display_order_idx on news (display_order, created_at desc);
+
+-- Generic keyed singleton text content — one row per named piece of
+-- app-wide copy, editable from admin. First use: 'purchase_instructions'
+-- ("How to Buy Credits", src/app/dashboard/how-to-buy). Not a payment
+-- system — just admin-editable text the mobile app displays as-is.
+create table if not exists app_content (
+  id uuid primary key default gen_random_uuid(),
+  key text unique not null,
+  title text,
+  content text,
+  is_active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+-- Multiplier Climb (crash game): players get an extra guest_id so the
+-- mobile app's public gameplay API (src/app/api/games/crash/*) can
+-- find-or-create a player row without an admin-style signup, and rounds
+-- get their own table. See src/lib/crash/engine.ts for the provably-fair
+-- crash-point algorithm and src/lib/supabase/supabaseCrashRepository.ts
+-- for how these are read/written.
+alter table players add column if not exists guest_id text unique;
+
+-- Once a player signs in via Supabase Auth (see blackhole_app's
+-- features/auth), src/app/api/public/players/link links their verified
+-- identity to this guest_id's player row so admin can find/credit a real,
+-- portable account instead of an anonymous per-device guest. One canonical
+-- player row per auth account; every gameplay call after that resolves by
+-- this user_id (see src/lib/supabase/playerResolution.ts) rather than
+-- guest_id, which is what makes balances portable across devices.
+alter table players add column if not exists user_id uuid references auth.users(id) on delete set null;
+create unique index if not exists players_user_id_idx on players (user_id) where user_id is not null;
+
+-- The slot machine's server-side mirror (see supabaseSlotsRepository.ts).
+-- Null (not 0) means this player has never synced a spin yet — the first
+-- sync seeds it from the device's existing local balance instead of
+-- resetting it, since the slot machine had local-only progress before
+-- this column existed. Kept separate from credit_balance (Multiplier
+-- Climb's economy) deliberately — the two games' coins aren't merged.
+alter table players add column if not exists slot_balance numeric;
+
+create table if not exists crash_rounds (
+  id uuid primary key default gen_random_uuid(),
+  player_id uuid not null references players(id) on delete cascade,
+  bet_amount numeric not null,
+  growth_rate numeric not null,
+  crash_point numeric not null,
+  server_seed text not null,
+  server_seed_hash text not null,
+  status text not null default 'pending' check (status in ('pending', 'collected', 'crashed')),
+  payout numeric,
+  resolved_multiplier numeric,
+  started_at timestamptz not null default now(),
+  resolved_at timestamptz
+);
+
+create index if not exists crash_rounds_player_id_idx on crash_rounds (player_id);
+
+-- Slot machine spin log (see supabaseSlotsRepository.ts). The actual RNG
+-- outcome is decided client-side (unchanged game logic, see the mobile
+-- app's SpinEngine) — this table is the audit trail + balance ledger, not
+-- what decides a spin.
+create table if not exists spin_history (
+  id uuid primary key default gen_random_uuid(),
+  player_id uuid not null references players(id) on delete cascade,
+  bet integer not null,
+  win_amount integer not null default 0,
+  is_win boolean not null default false,
+  jackpot_hit boolean not null default false,
+  outcome text not null,
+  symbols text[] not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists spin_history_player_id_idx on spin_history (player_id, created_at desc);
+
+-- Shared round log for server-authoritative "single decision" games —
+-- Lucky Wheel and Scratch Card (see src/lib/games/wheel.ts,
+-- src/lib/games/scratch.ts, supabaseGameRoundRepository.ts). Unlike
+-- crash_rounds, every row here resolves instantly in one request — there's
+-- no pending/collect step — so there's no status column.
+create table if not exists game_rounds (
+  id uuid primary key default gen_random_uuid(),
+  player_id uuid not null references players(id) on delete cascade,
+  game_type text not null check (game_type in ('wheel', 'scratch')),
+  bet_amount integer not null,
+  win_amount integer not null default 0,
+  result jsonb not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists game_rounds_player_id_idx on game_rounds (player_id, created_at desc);
 
 -- Admins authenticate via Supabase Auth (auth.users). This table supplies
 -- the display name + role the dashboard shows; supabaseAuthRepository looks
@@ -65,6 +178,11 @@ alter table players enable row level security;
 alter table games enable row level security;
 alter table transactions enable row level security;
 alter table admin_profiles enable row level security;
+alter table crash_rounds enable row level security;
+alter table news enable row level security;
+alter table spin_history enable row level security;
+alter table app_content enable row level security;
+alter table game_rounds enable row level security;
 
 -- After creating an admin user (Supabase Dashboard -> Authentication -> Add
 -- user, or supabase.auth.admin.createUser), provision them as an admin:

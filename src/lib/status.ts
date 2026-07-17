@@ -41,3 +41,7 @@ export function gameStatusVisual(status: GameStatus): StatusVisual {
       return { tone: "neutral", label: "Disabled" };
   }
 }
+
+export function newsStatusVisual(isActive: boolean): StatusVisual {
+  return isActive ? { tone: "good", label: "Active" } : { tone: "neutral", label: "Inactive" };
+}

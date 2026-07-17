@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth/requireAdmin";
 import { getGamesRepository } from "@/lib/repositories";
-import type { GameCategory, GameStatus, NewGameInput } from "@/lib/types";
+import type { GameCategory, GameEntryPoint, GameStatus, NewGameInput } from "@/lib/types";
 
 const VALID_CATEGORIES: GameCategory[] = ["slots", "table", "arcade", "puzzle"];
 const VALID_STATUSES: GameStatus[] = ["active", "disabled", "maintenance"];
+const VALID_ENTRY_POINTS: GameEntryPoint[] = ["slots", "crash", "wheel", "scratch"];
 
 export async function GET() {
   const auth = await requireAdmin();
@@ -24,6 +25,9 @@ export async function POST(request: Request) {
   const status = (body?.status as GameStatus) ?? "active";
   const rtp = Number(body?.rtp);
   const releaseDate = typeof body?.releaseDate === "string" ? body.releaseDate : "";
+  const appEntryPoint = VALID_ENTRY_POINTS.includes(body?.appEntryPoint as GameEntryPoint)
+    ? (body.appEntryPoint as GameEntryPoint)
+    : undefined;
 
   if (!name || !VALID_CATEGORIES.includes(category) || !VALID_STATUSES.includes(status)) {
     return NextResponse.json({ error: "name, category, and status are required." }, { status: 400 });
@@ -35,7 +39,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "releaseDate is required." }, { status: 400 });
   }
 
-  const input: NewGameInput = { name, category, status, rtp, releaseDate };
+  const input: NewGameInput = { name, category, status, rtp, releaseDate, appEntryPoint };
   const game = await getGamesRepository().create(input);
   return NextResponse.json({ game }, { status: 201 });
 }

@@ -27,6 +27,7 @@ export const supabaseGamesRepository: GamesRepository = {
         total_wagered: 0,
         total_payout: 0,
         accent_seed: Math.floor(Math.random() * 12),
+        app_entry_point: input.appEntryPoint || null,
       })
       .select("*")
       .single();
@@ -42,6 +43,9 @@ export const supabaseGamesRepository: GamesRepository = {
     if (patch.status !== undefined) columnPatch.status = patch.status;
     if (patch.rtp !== undefined) columnPatch.rtp = patch.rtp;
     if (patch.releaseDate !== undefined) columnPatch.release_date = patch.releaseDate;
+    // "in" (not !== undefined): the route sets this key to `undefined` to mean
+    // "clear it", which a !== undefined check couldn't tell apart from "unset".
+    if ("appEntryPoint" in patch) columnPatch.app_entry_point = patch.appEntryPoint ?? null;
 
     const { data, error } = await supabase
       .from("games")

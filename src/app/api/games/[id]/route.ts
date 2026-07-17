@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth/requireAdmin";
 import { getGamesRepository } from "@/lib/repositories";
-import type { Game } from "@/lib/types";
+import type { Game, GameEntryPoint } from "@/lib/types";
+
+const VALID_ENTRY_POINTS: GameEntryPoint[] = ["slots", "crash", "wheel", "scratch"];
 
 export async function PATCH(
   request: Request,
@@ -18,6 +20,14 @@ export async function PATCH(
   if (typeof body?.status === "string") patch.status = body.status;
   if (typeof body?.rtp === "number") patch.rtp = body.rtp;
   if (typeof body?.releaseDate === "string") patch.releaseDate = body.releaseDate;
+  // Present-but-invalid (e.g. "" for the form's "None" option) explicitly
+  // clears it — see supabaseGamesRepository.update's "in" check for why
+  // this can't just be `undefined` and skipped like the fields above.
+  if (typeof body?.appEntryPoint === "string") {
+    patch.appEntryPoint = VALID_ENTRY_POINTS.includes(body.appEntryPoint as GameEntryPoint)
+      ? (body.appEntryPoint as GameEntryPoint)
+      : undefined;
+  }
 
   const game = await getGamesRepository().update(id, patch);
   return NextResponse.json({ game });

@@ -1,6 +1,7 @@
-import { seedPlayers } from "@/lib/mock/seedData";
+import { randomUUID } from "crypto";
+import { seedPlayers, seedTransactions } from "@/lib/mock/seedData";
 import { mockLatency } from "@/lib/mock/delay";
-import type { Player } from "@/lib/types";
+import type { Player, Transaction } from "@/lib/types";
 import type {
   PlayersListParams,
   PlayersRepository,
@@ -43,6 +44,27 @@ export const mockPlayersRepository: PlayersRepository = {
     const player = players.find((p) => p.id === id);
     if (!player) throw new Error(`Player ${id} not found`);
     player.status = status;
+    return player;
+  },
+
+  async adjustBalance(id: string, { amount, note }) {
+    await mockLatency();
+    const player = players.find((p) => p.id === id);
+    if (!player) throw new Error(`Player ${id} not found`);
+    player.creditBalance = Math.max(0, player.creditBalance + amount);
+
+    const txn: Transaction = {
+      id: `tx_${randomUUID().slice(0, 8)}`,
+      playerId: player.id,
+      playerName: player.displayName,
+      type: "bonus",
+      status: "completed",
+      amount,
+      note,
+      createdAt: new Date().toISOString(),
+    };
+    seedTransactions.unshift(txn);
+
     return player;
   },
 };

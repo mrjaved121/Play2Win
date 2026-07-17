@@ -2,6 +2,7 @@ import { mulberry32 } from "@/lib/utils";
 import type {
   Game,
   GameCategory,
+  NewsItem,
   Player,
   PlayerStatus,
   Transaction,
@@ -53,8 +54,10 @@ export const GAME_DEFINITIONS: Array<{
   category: GameCategory;
   rtp: number;
   releaseDaysAgo: number;
+  /** Set only for catalog rows that back a real in-app screen. */
+  appEntryPoint?: "slots" | "crash" | "wheel" | "scratch";
 }> = [
-  { name: "Nova Slots", category: "slots", rtp: 96.2, releaseDaysAgo: 540 },
+  { name: "Nova Slots", category: "slots", rtp: 96.2, releaseDaysAgo: 540, appEntryPoint: "slots" },
   { name: "Event Horizon", category: "slots", rtp: 95.4, releaseDaysAgo: 460 },
   { name: "Quasar Wheel", category: "arcade", rtp: 94.8, releaseDaysAgo: 400 },
   { name: "Pulsar Blackjack", category: "table", rtp: 98.9, releaseDaysAgo: 380 },
@@ -66,6 +69,9 @@ export const GAME_DEFINITIONS: Array<{
   { name: "Supernova Poker", category: "table", rtp: 97.8, releaseDaysAgo: 120 },
   { name: "Dark Matter Dice", category: "table", rtp: 95.1, releaseDaysAgo: 75 },
   { name: "Wormhole Roulette", category: "table", rtp: 97.3, releaseDaysAgo: 30 },
+  { name: "Multiplier Climb", category: "arcade", rtp: 97.0, releaseDaysAgo: 5, appEntryPoint: "crash" },
+  { name: "Lucky Wheel", category: "arcade", rtp: 92.0, releaseDaysAgo: 2, appEntryPoint: "wheel" },
+  { name: "Scratch Card", category: "arcade", rtp: 92.4, releaseDaysAgo: 1, appEntryPoint: "scratch" },
 ];
 
 function buildPlayers(count: number): Player[] {
@@ -103,13 +109,17 @@ function buildGames(): Game[] {
       id: `gm_${(i + 1).toString().padStart(3, "0")}`,
       name: def.name,
       category: def.category,
-      status: rand() > 0.93 ? "maintenance" : "active",
+      // Keep the real, in-app-playable games always active — a random
+      // "maintenance" flip on dev-server restart would otherwise lock one
+      // out of the lobby unpredictably.
+      status: def.appEntryPoint !== undefined || rand() <= 0.93 ? "active" : "maintenance",
       rtp: def.rtp,
       totalSessions,
       totalWagered,
       totalPayout,
       releaseDate: daysAgoIso(def.releaseDaysAgo, 0),
       accentSeed: i,
+      appEntryPoint: def.appEntryPoint,
     };
   });
 }
@@ -161,6 +171,64 @@ function buildTransactions(players: Player[], games: Game[], count: number): Tra
   );
 }
 
+const HELP_SUPPORT_DEFINITIONS: Array<{
+  title: string;
+  content: string;
+  isActive: boolean;
+  daysAgo: number;
+}> = [
+  {
+    title: "How do I contact support?",
+    content:
+      "Reach our support team 24/7 via the in-app chat or email support@blackhole.example. Average response time is under 10 minutes.",
+    isActive: true,
+    daysAgo: 1,
+  },
+  {
+    title: "Deposit & withdrawal limits",
+    content:
+      "Minimum deposit is 10 credits; minimum withdrawal is 25 credits. Withdrawals are typically processed within 24 hours.",
+    isActive: true,
+    daysAgo: 5,
+  },
+  {
+    title: "Verifying your account",
+    content:
+      "To verify your account, go to Settings > Verification and upload a valid government-issued ID. Verification usually completes within one business day.",
+    isActive: true,
+    daysAgo: 8,
+  },
+  {
+    title: "Responsible gaming tools",
+    content:
+      "You can set deposit limits, session reminders, and self-exclusion periods any time from Settings > Responsible Gaming.",
+    isActive: true,
+    daysAgo: 20,
+  },
+  {
+    title: "Scheduled maintenance window",
+    content:
+      "The platform may be briefly unavailable Thursdays between 02:00-02:30 UTC for routine maintenance.",
+    isActive: false,
+    daysAgo: 45,
+  },
+];
+
+function buildNews(): NewsItem[] {
+  return HELP_SUPPORT_DEFINITIONS.map((def, i) => {
+    const timestamp = daysAgoIso(def.daysAgo, 0);
+    return {
+      id: `nw_${(i + 1).toString().padStart(3, "0")}`,
+      title: def.title,
+      content: def.content,
+      isActive: def.isActive,
+      displayOrder: i,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+  });
+}
+
 export const seedPlayers: Player[] = buildPlayers(340);
 export const seedGames: Game[] = buildGames();
 export const seedTransactions: Transaction[] = buildTransactions(
@@ -168,3 +236,4 @@ export const seedTransactions: Transaction[] = buildTransactions(
   seedGames,
   2400,
 );
+export const seedNews: NewsItem[] = buildNews();

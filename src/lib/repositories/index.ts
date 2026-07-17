@@ -1,18 +1,33 @@
 import { mockPlayersRepository } from "@/lib/mock/mockPlayersRepository";
 import { mockTransactionsRepository } from "@/lib/mock/mockTransactionsRepository";
 import { mockGamesRepository } from "@/lib/mock/mockGamesRepository";
+import { mockNewsRepository } from "@/lib/mock/mockNewsRepository";
 import { mockAnalyticsRepository } from "@/lib/mock/mockAnalyticsRepository";
 import { mockAuthRepository } from "@/lib/mock/mockAuthRepository";
+import { mockCrashRepository } from "@/lib/mock/mockCrashRepository";
+import { mockSlotsRepository } from "@/lib/mock/mockSlotsRepository";
+import { mockAppContentRepository } from "@/lib/mock/mockAppContentRepository";
+import { mockGameRoundRepository } from "@/lib/mock/mockGameRoundRepository";
 import { supabasePlayersRepository } from "@/lib/supabase/supabasePlayersRepository";
 import { supabaseTransactionsRepository } from "@/lib/supabase/supabaseTransactionsRepository";
 import { supabaseGamesRepository } from "@/lib/supabase/supabaseGamesRepository";
+import { supabaseNewsRepository } from "@/lib/supabase/supabaseNewsRepository";
 import { supabaseAnalyticsRepository } from "@/lib/supabase/supabaseAnalyticsRepository";
 import { supabaseAuthRepository } from "@/lib/supabase/supabaseAuthRepository";
+import { supabaseCrashRepository } from "@/lib/supabase/supabaseCrashRepository";
+import { supabaseSlotsRepository } from "@/lib/supabase/supabaseSlotsRepository";
+import { supabaseAppContentRepository } from "@/lib/supabase/supabaseAppContentRepository";
+import { supabaseGameRoundRepository } from "@/lib/supabase/supabaseGameRoundRepository";
 import type {
   AnalyticsRepository,
+  AppContentRepository,
   AuthRepository,
+  CrashRepository,
+  GameRoundRepository,
   GamesRepository,
+  NewsRepository,
   PlayersRepository,
+  SlotsRepository,
   TransactionsRepository,
 } from "@/lib/repositories/types";
 
@@ -37,10 +52,30 @@ export function getGamesRepository(): GamesRepository {
   return isSupabaseDataSource() ? supabaseGamesRepository : mockGamesRepository;
 }
 
+export function getNewsRepository(): NewsRepository {
+  return isSupabaseDataSource() ? supabaseNewsRepository : mockNewsRepository;
+}
+
 export function getAnalyticsRepository(): AnalyticsRepository {
   return isSupabaseDataSource() ? supabaseAnalyticsRepository : mockAnalyticsRepository;
 }
 
 export function getAuthRepository(): AuthRepository {
   return isSupabaseDataSource() ? supabaseAuthRepository : mockAuthRepository;
+}
+
+export function getCrashRepository(): CrashRepository {
+  return isSupabaseDataSource() ? supabaseCrashRepository : mockCrashRepository;
+}
+
+export function getSlotsRepository(): SlotsRepository {
+  return isSupabaseDataSource() ? supabaseSlotsRepository : mockSlotsRepository;
+}
+
+export function getAppContentRepository(): AppContentRepository {
+  return isSupabaseDataSource() ? supabaseAppContentRepository : mockAppContentRepository;
+}
+
+export function getGameRoundRepository(): GameRoundRepository {
+  return isSupabaseDataSource() ? supabaseGameRoundRepository : mockGameRoundRepository;
 }

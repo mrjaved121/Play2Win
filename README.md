@@ -90,6 +90,47 @@ in the UI or API routes changes when you switch.
    or write a small seed script against the same schema).
 6. Restart the dev server.
 
+## Mobile Game API — Multiplier Climb (crash game)
+
+Unlike the slot machine in the mobile app (which is entirely client-side),
+**Multiplier Climb**'s game logic lives here. The mobile app is a thin API
+client: it never picks a crash point or computes a payout itself, it just
+renders whatever these endpoints return.
+
+- `GET  /api/games/crash/balance?guestId=` — fetch (creating on first
+  sight) a guest player's credit balance.
+- `POST /api/games/crash/bet` — `{ guestId, betAmount }`. Deducts the bet,
+  starts a round, and returns `{ round, balance }`. `round.crashPoint` and
+  `round.serverSeed` are withheld while `status: "pending"` — that's the
+  whole mechanic. The client renders the climbing multiplier itself from
+  `round.startedAt` + `round.growthRate` (`multiplier = e^(growthRate *
+  secondsElapsed)`, see `src/lib/crash/engine.ts`) without polling.
+- `POST /api/games/crash/collect` — `{ guestId, roundId }`. Cashes out.
+  If the round's hidden crash time already passed, it's settled as a loss
+  instead (a slow request can't out-run the crash). On resolution, the
+  response reveals `crashPoint` + `serverSeed` — provably fair: anyone can
+  independently confirm `sha256(serverSeed) === serverSeedHash` (given at
+  bet time) and that re-deriving the crash point from `(serverSeed,
+  roundId)` reproduces `crashPoint`.
+- `GET /api/games/crash/state?guestId=&roundId=` — reconciliation after
+  the app backgrounds/reopens mid-round.
+
+These routes are public (no admin session, permissive CORS) and identify
+players by a client-generated `guestId` rather than a login — the
+`CrashRepository` interface (`src/lib/repositories/types.ts`) auto-creates
+a `players` row on first bet. Bets/payouts write real `wager`/`payout`
+transactions against the *same* players/transactions tables the rest of
+this dashboard reads, so a round played on the phone shows up immediately
+in Players, Transactions and Analytics here — no separate data path to
+keep in sync. `DATA_SOURCE=mock` keeps rounds/players in an in-memory Map
+(resets on server restart, same tradeoff as the rest of the mock layer);
+`DATA_SOURCE=supabase` persists to the `crash_rounds` table (added by
+`supabase/schema.sql`) plus the existing `players`/`transactions` tables.
+
+Point the mobile app at this server with `--dart-define=API_BASE_URL=...`
+(see `blackhole_app`'s README) — e.g. `http://10.0.2.2:3000` to reach a
+`next dev` server running on the host machine from the Android emulator.
+
 ## Environment variables
 
 | Variable | Used by | Purpose |

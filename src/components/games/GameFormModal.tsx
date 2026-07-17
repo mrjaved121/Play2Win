@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
-import type { Game, GameCategory, GameStatus, NewGameInput } from "@/lib/types";
+import type { Game, GameCategory, GameEntryPoint, GameStatus, NewGameInput } from "@/lib/types";
 
 interface GameFormModalProps {
   open: boolean;
@@ -14,6 +14,13 @@ interface GameFormModalProps {
 
 const CATEGORIES: GameCategory[] = ["slots", "table", "arcade", "puzzle"];
 const STATUSES: GameStatus[] = ["active", "disabled", "maintenance"];
+const ENTRY_POINTS: Array<{ value: GameEntryPoint | ""; label: string }> = [
+  { value: "", label: "None (coming soon)" },
+  { value: "slots", label: "Slot Machine" },
+  { value: "crash", label: "Multiplier Climb" },
+  { value: "wheel", label: "Lucky Wheel" },
+  { value: "scratch", label: "Scratch Card" },
+];
 
 function toDateInputValue(iso: string): string {
   return iso.slice(0, 10);
@@ -46,6 +53,7 @@ function GameForm({
   const [releaseDate, setReleaseDate] = useState(() =>
     initial ? toDateInputValue(initial.releaseDate) : new Date().toISOString().slice(0, 10),
   );
+  const [appEntryPoint, setAppEntryPoint] = useState<GameEntryPoint | "">(initial?.appEntryPoint ?? "");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -64,7 +72,7 @@ function GameForm({
 
     setIsSubmitting(true);
     try {
-      await onSubmit({ name: name.trim(), category, status, rtp: rtpValue, releaseDate });
+      await onSubmit({ name: name.trim(), category, status, rtp: rtpValue, releaseDate, appEntryPoint });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
@@ -113,6 +121,21 @@ function GameForm({
           </select>
         </label>
       </div>
+
+      <label className="flex flex-col gap-1 text-sm">
+        <span className="text-ink-secondary">Available in app as</span>
+        <select
+          value={appEntryPoint}
+          onChange={(e) => setAppEntryPoint(e.target.value as GameEntryPoint | "")}
+          className="h-10 rounded-lg border border-line bg-surface-raised px-3 text-ink outline-none focus:border-accent"
+        >
+          {ENTRY_POINTS.map((ep) => (
+            <option key={ep.value} value={ep.value}>
+              {ep.label}
+            </option>
+          ))}
+        </select>
+      </label>
 
       <div className="grid grid-cols-2 gap-3">
         <label className="flex flex-col gap-1 text-sm">

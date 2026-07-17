@@ -9,6 +9,7 @@ import { Pagination } from "@/components/ui/Pagination";
 import { Drawer } from "@/components/ui/Drawer";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { PlayerStatusSelect } from "@/components/players/PlayerStatusSelect";
+import { AddCoinsForm } from "@/components/players/AddCoinsForm";
 import { playerStatusVisual } from "@/lib/status";
 import { formatDate, formatFullCredits, formatCredits, formatRelativeTime } from "@/lib/utils";
 import type { Paginated, Player, PlayerStatus } from "@/lib/types";
@@ -47,6 +48,18 @@ export default function PlayersPage() {
     } finally {
       setUpdatingId(null);
     }
+  }
+
+  async function handleAdjustBalance(playerId: string, params: { amount: number; note?: string }) {
+    const res = await fetch(`/api/players/${playerId}/adjust-balance`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(params),
+    });
+    const body = await res.json().catch(() => null);
+    if (!res.ok) throw new Error(body?.error ?? "Request failed.");
+    setRefreshKey((k) => k + 1);
+    setSelected((prev) => (prev && prev.id === playerId ? { ...prev, creditBalance: body.player.creditBalance } : prev));
   }
 
   return (
@@ -156,7 +169,16 @@ export default function PlayersPage() {
         {selected && (
           <div className="flex flex-col gap-5">
             <div>
-              <p className="text-lg font-semibold text-ink">{selected.displayName}</p>
+              <div className="flex items-center gap-2">
+                <p className="text-lg font-semibold text-ink">{selected.displayName}</p>
+                <span
+                  className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                    selected.userId ? "bg-good/10 text-good" : "bg-ink-muted/10 text-ink-muted"
+                  }`}
+                >
+                  {selected.userId ? "Registered" : "Guest only"}
+                </span>
+              </div>
               <p className="text-sm text-ink-muted">{selected.email}</p>
               <p className="mt-1 text-xs text-ink-muted">{selected.id}</p>
             </div>
@@ -170,6 +192,19 @@ export default function PlayersPage() {
               />
             </div>
 
+            <div className="flex flex-col gap-2 rounded-lg border border-line px-3 py-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-ink-secondary">Add / remove coins (Multiplier Climb)</span>
+                <span className="tabular text-sm text-ink">{formatFullCredits(selected.creditBalance)}</span>
+              </div>
+              {!selected.userId && (
+                <p className="text-xs text-warning">
+                  This is a guest-only account (tied to one device) — a reinstall will lose this balance.
+                </p>
+              )}
+              <AddCoinsForm onSubmit={(params) => handleAdjustBalance(selected.id, params)} />
+            </div>
+
             <dl className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <dt className="text-ink-muted">VIP tier</dt>
@@ -180,8 +215,14 @@ export default function PlayersPage() {
                 <dd className="mt-0.5 text-ink">{selected.country}</dd>
               </div>
               <div>
-                <dt className="text-ink-muted">Credit balance</dt>
+                <dt className="text-ink-muted">Credit balance (Multiplier Climb)</dt>
                 <dd className="mt-0.5 tabular text-ink">{formatFullCredits(selected.creditBalance)}</dd>
+              </div>
+              <div>
+                <dt className="text-ink-muted">Slot balance</dt>
+                <dd className="mt-0.5 tabular text-ink">
+                  {selected.slotBalance !== undefined ? formatFullCredits(selected.slotBalance) : "Not synced yet"}
+                </dd>
               </div>
               <div>
                 <dt className="text-ink-muted">Total deposited</dt>

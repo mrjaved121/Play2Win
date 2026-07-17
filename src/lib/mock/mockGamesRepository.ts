@@ -27,6 +27,7 @@ export const mockGamesRepository: GamesRepository = {
       totalPayout: 0,
       releaseDate: input.releaseDate,
       accentSeed: games.length,
+      appEntryPoint: input.appEntryPoint || undefined,
     };
     games.push(game);
     return game;
