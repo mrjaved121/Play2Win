@@ -4,8 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/config/api_config.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../core/widgets/widgets.dart';
+import '../../../crash/presentation/providers/crash_providers.dart';
 import '../../../sync/presentation/providers/progress_sync_providers.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../providers/auth_providers.dart';
@@ -92,6 +94,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       final String? userId = repo.currentUser?.id;
       if (userId != null) {
         unawaited(ref.read(progressSyncControllerProvider).syncOnSignIn(userId));
+        // Best-effort: gives admin a real account to find/credit instead of
+        // an anonymous guest. Never blocks sign-in — a stale/duplicate link
+        // (e.g. this account already linked on another device) is just
+        // dropped, same as a sync hiccup would be.
+        final String? accessToken = repo.accessToken;
+        if (ApiConfig.isConfigured && accessToken != null) {
+          final String guestId = ref.read(crashGuestIdProvider);
+          unawaited(
+            ref
+                .read(crashRepositoryProvider)
+                .linkAccount(guestId: guestId, accessToken: accessToken)
+                .catchError((_) {}),
+          );
+        }
       }
       if (mounted) context.pop();
     } catch (e) {

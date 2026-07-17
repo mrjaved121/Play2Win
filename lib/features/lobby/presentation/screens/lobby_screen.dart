@@ -12,8 +12,8 @@ import '../../../slot/domain/entities/game_state.dart';
 import '../../../slot/presentation/providers/game_providers.dart';
 import '../../../slot/presentation/widgets/daily_bonus_card.dart';
 import '../../domain/entities/game_catalog_entry.dart';
-import '../../domain/lobby_catalog.dart';
 import '../providers/favorites_providers.dart';
+import '../providers/lobby_catalog_providers.dart';
 import '../providers/recently_played_providers.dart';
 import '../widgets/category_browse_sheet.dart';
 import '../widgets/category_chip_row.dart';
@@ -67,9 +67,10 @@ class _LobbyScreenState extends ConsumerState<LobbyScreen> {
     final bool dailyClaimed = ref.watch(dailyBonusProvider).claimed;
     final Set<String> favorites = ref.watch(favoritesProvider);
     final List<String> recentlyPlayedIds = ref.watch(recentlyPlayedProvider);
+    final LobbyCatalogState catalog = ref.watch(lobbyCatalogProvider);
     final List<GameCatalogEntry> recentlyPlayed = <GameCatalogEntry>[
       for (final String id in recentlyPlayedIds)
-        ...LobbyCatalog.games.where((GameCatalogEntry e) => e.id == id),
+        ...catalog.games.where((GameCatalogEntry e) => e.id == id),
     ];
 
     return ScreenBackground(
@@ -87,7 +88,7 @@ class _LobbyScreenState extends ConsumerState<LobbyScreen> {
             playerName: playerName,
             balance: game.balance,
             jackpot: game.jackpot,
-            onSearchTap: () => showGameSearchSheet(context, onSelect: _openGame),
+            onSearchTap: () => showGameSearchSheet(context, catalog: catalog.games, onSelect: _openGame),
           ),
           const SizedBox(height: AppSpacing.lg),
           const RecentWinnersTicker(),
@@ -118,6 +119,7 @@ class _LobbyScreenState extends ConsumerState<LobbyScreen> {
             onSelected: (CategoryFilter f) => setState(() => _filter = f),
             onBrowseTap: () => showCategoryBrowseSheet(
               context,
+              catalog: catalog.games,
               selected: _filter,
               onSelected: (CategoryFilter f) => setState(() => _filter = f),
             ),
@@ -139,7 +141,7 @@ class _LobbyScreenState extends ConsumerState<LobbyScreen> {
             const SectionHeader(title: 'Top Games', icon: Icons.local_fire_department_rounded),
             const SizedBox(height: AppSpacing.md),
             _GameRow(
-              entries: LobbyCatalog.live,
+              entries: catalog.live,
               favorites: favorites,
               onTap: _openGame,
               onToggleFavorite: (GameCatalogEntry e) =>
@@ -151,7 +153,7 @@ class _LobbyScreenState extends ConsumerState<LobbyScreen> {
             const SectionHeader(title: 'Coming Soon', icon: Icons.upcoming_rounded),
             const SizedBox(height: AppSpacing.md),
             _GameRow(
-              entries: LobbyCatalog.comingSoon,
+              entries: catalog.comingSoon,
               favorites: favorites,
               onTap: _openGame,
               onToggleFavorite: (GameCatalogEntry e) =>

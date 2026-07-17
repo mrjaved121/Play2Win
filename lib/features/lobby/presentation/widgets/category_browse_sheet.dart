@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/theme.dart';
 import '../../../../core/widgets/widgets.dart';
-import '../../domain/lobby_catalog.dart';
+import '../../domain/entities/game_catalog_entry.dart';
 import 'category_chip_row.dart';
 
 /// Category browser modal — mirrors LUNA-BET's "All Games / Slots / Live"
@@ -10,6 +10,7 @@ import 'category_chip_row.dart';
 /// numbers. Tapping a row applies that filter and closes the sheet.
 Future<void> showCategoryBrowseSheet(
   BuildContext context, {
+  required List<GameCatalogEntry> catalog,
   required CategoryFilter selected,
   required ValueChanged<CategoryFilter> onSelected,
 }) {
@@ -18,20 +19,26 @@ Future<void> showCategoryBrowseSheet(
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
     builder: (BuildContext sheetContext) =>
-        CategoryBrowseSheet(selected: selected, onSelected: onSelected),
+        CategoryBrowseSheet(catalog: catalog, selected: selected, onSelected: onSelected),
   );
 }
 
 class CategoryBrowseSheet extends StatelessWidget {
-  const CategoryBrowseSheet({required this.selected, required this.onSelected, super.key});
+  const CategoryBrowseSheet({
+    required this.catalog,
+    required this.selected,
+    required this.onSelected,
+    super.key,
+  });
 
+  final List<GameCatalogEntry> catalog;
   final CategoryFilter selected;
   final ValueChanged<CategoryFilter> onSelected;
 
   int _countFor(CategoryFilter filter) => switch (filter) {
-        CategoryFilter.all => LobbyCatalog.games.length,
-        CategoryFilter.live => LobbyCatalog.live.length,
-        CategoryFilter.comingSoon => LobbyCatalog.comingSoon.length,
+        CategoryFilter.all => catalog.length,
+        CategoryFilter.live => catalog.where((GameCatalogEntry g) => g.isLive).length,
+        CategoryFilter.comingSoon => catalog.where((GameCatalogEntry g) => !g.isLive).length,
       };
 
   @override

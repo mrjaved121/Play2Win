@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -9,6 +10,7 @@ import '../../../../core/widgets/widgets.dart';
 import '../../../achievements/presentation/providers/achievements_providers.dart';
 import '../../../auth/domain/entities/auth_user.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
+import '../../../crash/presentation/providers/crash_providers.dart';
 import '../../../onboarding/presentation/providers/onboarding_providers.dart';
 import '../../../slot/domain/entities/game_state.dart';
 import '../../../slot/presentation/providers/game_providers.dart';
@@ -17,10 +19,10 @@ import '../../../slot/presentation/providers/game_providers.dart';
 /// lifetime spins, a real statistics grid and an achievements preview
 /// strip — all sourced from [gameProvider] / [achievementViewsProvider].
 ///
-/// The display name is the real Guest Mode nickname from onboarding
-/// ([playerNameProvider]), editable here — there's still no authenticated
-/// account system (see [[project-backend-architecture]]), just a local
-/// nickname.
+/// The display name is the local Guest Mode nickname from onboarding
+/// ([playerNameProvider]), editable here. Real cloud sign-in also exists
+/// ([authStateProvider]) — see [_PlayerIdRow] for the server-side
+/// `players.id` that identity resolves to, which is what admin sees.
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
@@ -131,6 +133,10 @@ class ProfileScreen extends ConsumerWidget {
                       ),
                     ],
                   ),
+                const SizedBox(height: AppSpacing.sm),
+                _PlayerIdRow(
+                  playerId: ref.watch(crashGameProvider.select((CrashUiState s) => s.playerId)),
+                ),
                 const SizedBox(height: AppSpacing.xl),
                 PremiumCard(
                   child: Column(
@@ -222,6 +228,53 @@ class ProfileScreen extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// The server-side `players.id` this device/account resolves to — the
+/// same id admin sees in the Players list drawer, so a player can quote
+/// it for support. Distinct from the local guestId (device lookup key
+/// only, not admin-searchable) — see CrashUiState.playerId's doc comment.
+/// Shows "Syncing…" until the first balance fetch completes rather than
+/// falling back to the guestId, since showing a value that later changes
+/// to a different one would be more confusing than a brief wait.
+class _PlayerIdRow extends StatelessWidget {
+  const _PlayerIdRow({required this.playerId});
+
+  final String? playerId;
+
+  Future<void> _copy(BuildContext context) async {
+    await Clipboard.setData(ClipboardData(text: playerId!));
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(const SnackBar(content: Text('Player ID copied')));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: <Widget>[
+        Text('Player ID: ', style: AppTextStyles.bodySmall.copyWith(color: AppColors.textMuted)),
+        Flexible(
+          child: Text(
+            playerId ?? 'Syncing…',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+          ),
+        ),
+        if (playerId != null) ...<Widget>[
+          const SizedBox(width: AppSpacing.xs),
+          PressableScale(
+            onTap: () => _copy(context),
+            playClickSound: false,
+            child: const Icon(Icons.copy_rounded, size: 14, color: AppColors.textMuted),
+          ),
+        ],
+      ],
     );
   }
 }

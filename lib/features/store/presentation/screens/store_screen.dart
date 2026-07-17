@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../../core/routing/route_names.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../core/utils/extensions.dart';
 import '../../../../core/widgets/widgets.dart';
@@ -9,8 +11,10 @@ import '../widgets/special_offer_card.dart';
 import '../widgets/vip_membership_card.dart';
 
 /// Store tab: special offer, coin pack grid, VIP membership upsell and
-/// themed bundles. All prices/contents are placeholder catalog data —
-/// Phase 6 wires this to a real IAP catalog.
+/// themed bundles. All prices/contents are placeholder catalog data — this
+/// app has no real IAP integration, so every Buy/Subscribe CTA sends the
+/// player to Help & Support instead, which explains (via admin-managed
+/// copy) that this is a non-commercial demo rather than failing silently.
 class StoreScreen extends StatelessWidget {
   const StoreScreen({super.key});
 
@@ -24,21 +28,8 @@ class StoreScreen extends StatelessWidget {
     (coins: 35000, price: r'$44.99', bonus: 75, popular: false),
   ];
 
-  void _showComingSoon(BuildContext context) {
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Row(
-          children: <Widget>[
-            Icon(Icons.info_outline_rounded, color: AppColors.gold, size: 18),
-            SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: Text('Purchases aren\'t connected yet — check back soon!'),
-            ),
-          ],
-        ),
-      ),
-    );
+  void _goToHelpSupport(BuildContext context) {
+    context.pushNamed(RouteNames.helpSupport);
   }
 
   @override
@@ -66,7 +57,7 @@ class StoreScreen extends StatelessWidget {
                   originalPrice: r'$29.99',
                   discountedPrice: r'$14.99',
                   remaining: const Duration(hours: 6, minutes: 12),
-                  onBuy: () => _showComingSoon(context),
+                  onBuy: () => _goToHelpSupport(context),
                 ),
                 const SizedBox(height: AppSpacing.xl),
                 const SectionHeader(title: 'Coin Packs', icon: Icons.monetization_on_rounded),
@@ -92,7 +83,7 @@ class StoreScreen extends StatelessWidget {
                     price: pack.price,
                     bonusPercent: pack.bonus,
                     popular: pack.popular,
-                    onBuy: () => _showComingSoon(context),
+                    onBuy: () => _goToHelpSupport(context),
                   );
                 },
                 childCount: _coinPacks.length,
@@ -112,7 +103,7 @@ class StoreScreen extends StatelessWidget {
                     'Priority customer support',
                   ],
                   price: r'$9.99',
-                  onSubscribe: () => _showComingSoon(context),
+                  onSubscribe: () => _goToHelpSupport(context),
                 ),
                 const SizedBox(height: AppSpacing.xl),
                 const SectionHeader(title: 'Bundles', icon: Icons.card_giftcard_rounded),
@@ -122,7 +113,7 @@ class StoreScreen extends StatelessWidget {
                   title: 'Starter Pack',
                   contents: '2,000 coins + 10 free spins',
                   price: r'$1.99',
-                  onBuy: () => _showComingSoon(context),
+                  onBuy: () => _goToHelpSupport(context),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 BundleCard(
@@ -130,7 +121,7 @@ class StoreScreen extends StatelessWidget {
                   title: 'High Roller Bundle',
                   contents: '25,000 coins + 2x multiplier token',
                   price: r'$19.99',
-                  onBuy: () => _showComingSoon(context),
+                  onBuy: () => _goToHelpSupport(context),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 BundleCard(
@@ -138,7 +129,7 @@ class StoreScreen extends StatelessWidget {
                   title: 'Jackpot Chaser',
                   contents: '10,000 coins + guaranteed bonus round',
                   price: r'$9.99',
-                  onBuy: () => _showComingSoon(context),
+                  onBuy: () => _goToHelpSupport(context),
                 ),
               ],
             ),

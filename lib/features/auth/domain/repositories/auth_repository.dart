@@ -10,6 +10,11 @@ abstract class AuthRepository {
 
   AppAuthUser? get currentUser;
 
+  /// The current session's JWT, sent to blackhole_admin so it can verify
+  /// the caller's identity server-side (see `/api/public/players/link`).
+  /// Null when signed out.
+  String? get accessToken;
+
   Future<void> signInWithPassword({required String email, required String password});
 
   Future<void> signUpWithPassword({required String email, required String password});

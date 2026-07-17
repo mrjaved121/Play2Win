@@ -30,6 +30,9 @@ class SupabaseAuthRepository implements AuthRepository {
   }
 
   @override
+  String? get accessToken => _client.auth.currentSession?.accessToken;
+
+  @override
   Future<void> signInWithPassword({required String email, required String password}) async {
     await _client.auth.signInWithPassword(email: email, password: password);
   }

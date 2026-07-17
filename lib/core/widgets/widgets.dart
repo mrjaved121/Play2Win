@@ -6,6 +6,7 @@ export 'animated_counter_text.dart';
 export 'avatar_badge.dart';
 export 'badge_pill.dart';
 export 'countdown_text.dart';
+export 'game_server_not_configured.dart';
 export 'glass_card.dart';
 export 'gradient_button.dart';
 export 'gradient_progress_bar.dart';

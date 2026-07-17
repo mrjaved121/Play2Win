@@ -49,6 +49,8 @@ dependencies:
   intl: ^0.20.3
   path_provider: ^2.1.6
   supabase_flutter: ^2.10.5
+  http: ^1.6.0
+  uuid: ^4.6.0
 
 dev_dependencies:
   flutter_test:

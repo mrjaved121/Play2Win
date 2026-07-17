@@ -19,6 +19,15 @@ abstract final class LobbyCatalog {
       badgeLabel: 'PLAY',
     ),
     GameCatalogEntry(
+      id: 'multiplier_climb',
+      title: 'Multiplier Climb',
+      icon: Icons.rocket_launch_rounded,
+      accentColor: AppColors.error,
+      status: GameStatus.live,
+      routeName: RouteNames.playCrash,
+      badgeLabel: 'NEW',
+    ),
+    GameCatalogEntry(
       id: 'lucky_wheel',
       title: 'Lucky Wheel',
       icon: Icons.donut_large_rounded,

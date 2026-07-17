@@ -3,26 +3,27 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../core/widgets/widgets.dart';
 import '../../domain/entities/game_catalog_entry.dart';
-import '../../domain/lobby_catalog.dart';
 
-/// Opens a bottom sheet that filters [LobbyCatalog.games] by title as the
-/// player types, matching the bet-options sheet's presentation
+/// Opens a bottom sheet that filters [catalog] by title as the player
+/// types, matching the bet-options sheet's presentation
 /// (`showModalBottomSheet` + rounded top + drag handle).
 Future<void> showGameSearchSheet(
   BuildContext context, {
+  required List<GameCatalogEntry> catalog,
   required ValueChanged<GameCatalogEntry> onSelect,
 }) {
   return showModalBottomSheet<void>(
     context: context,
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
-    builder: (BuildContext sheetContext) => GameSearchSheet(onSelect: onSelect),
+    builder: (BuildContext sheetContext) => GameSearchSheet(catalog: catalog, onSelect: onSelect),
   );
 }
 
 class GameSearchSheet extends StatefulWidget {
-  const GameSearchSheet({required this.onSelect, super.key});
+  const GameSearchSheet({required this.catalog, required this.onSelect, super.key});
 
+  final List<GameCatalogEntry> catalog;
   final ValueChanged<GameCatalogEntry> onSelect;
 
   @override
@@ -41,7 +42,7 @@ class _GameSearchSheetState extends State<GameSearchSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final List<GameCatalogEntry> results = LobbyCatalog.games
+    final List<GameCatalogEntry> results = widget.catalog
         .where((GameCatalogEntry e) => e.title.toLowerCase().contains(_query.toLowerCase()))
         .toList();
 
