@@ -1,4 +1,14 @@
 import { createHash, createHmac, randomBytes } from "crypto";
+import {
+  DEFAULT_INSTANT_CRASH_RATE,
+  DEFAULT_MAX_BET,
+  DEFAULT_MIN_BET,
+  DEFAULT_RTP,
+  INSTANT_CRASH_RATE_OPTIONS,
+  MAX_BET_RANGE,
+  MIN_BET_RANGE,
+  RTP_OPTIONS,
+} from "@/lib/crash/settingsOptions";
 
 // Multiplier Climb (crash game) core math. Pure functions only — no I/O,
 // no repository access — so both the mock and Supabase repositories share
@@ -11,26 +21,20 @@ export const GROWTH_RATE = 0.13;
 
 export const STARTING_BALANCE = 50000;
 
-// ---------------------------------------------------------------------
-// Admin-adjustable knobs (see CrashSettingsRepository). These are the
-// *defaults* seeded into settings storage and the *valid option sets* the
-// settings API validates against — never read directly by bet
-// validation/crash-point math at request time, since those must reflect
-// whatever an admin has live right now, not a build-time constant.
-// ---------------------------------------------------------------------
-
-/** Target long-run RTP, as a whole percent — one of these three tiers only. */
-export const RTP_OPTIONS = [95, 96, 97] as const;
-export const DEFAULT_RTP: number = 96;
-
-/** Percent of rounds forced to crash at 1.00x, independent of RTP. */
-export const INSTANT_CRASH_RATE_OPTIONS = [3, 4, 5, 6, 7] as const;
-export const DEFAULT_INSTANT_CRASH_RATE: number = 5;
-
-export const MIN_BET_RANGE = { min: 10, max: 50 } as const;
-export const MAX_BET_RANGE = { min: 100, max: 1000 } as const;
-export const DEFAULT_MIN_BET = 20;
-export const DEFAULT_MAX_BET = 500;
+// Re-exported from settingsOptions.ts (not declared here) so a "use
+// client" component (the admin settings UI) can import the option
+// sets/ranges without pulling in this file's `crypto` import — see that
+// file's doc comment.
+export {
+  RTP_OPTIONS,
+  DEFAULT_RTP,
+  INSTANT_CRASH_RATE_OPTIONS,
+  DEFAULT_INSTANT_CRASH_RATE,
+  MIN_BET_RANGE,
+  MAX_BET_RANGE,
+  DEFAULT_MIN_BET,
+  DEFAULT_MAX_BET,
+};
 
 export function multiplierAtElapsed(elapsedSeconds: number): number {
   return Math.exp(GROWTH_RATE * Math.max(0, elapsedSeconds));
@@ -77,20 +81,27 @@ export function hashServerSeed(serverSeed: string): string {
  * to cents then adds the same small extra edge real crash games have.
  *
  * continuousEdge is a *minimum* multiplier for the continuous pool (its
- * value at u=0), so it must be >= 1 — a crash game can't bust below 1.00x.
- * That fails algebraically whenever `rtp + instantCrashRate < 100` (e.g.
- * rtp=95 with instantCrashRate=3: continuousEdge = 0.95/0.97 ≈ 0.979). Left
- * unhandled, some of the continuous pool's own draws would land below 1.00
- * and get floored up to it — silently inflating the *observed* 1.00x rate
- * well past the configured instantCrashRate while still hitting the target
- * RTP exactly (verified by simulation: configured 3% measured ~6%).
- * Since RTP is the actual financial house-edge commitment, `effective`
- * raises instantCrashRate to the minimum needed to keep continuousEdge >= 1
- * for that rtp — i.e. for the ~3 (rtp, instantCrashRate) pairs out of 15
- * where this bites, the observed instant-crash rate is `100 - rtp` instead
- * of the configured value, and RTP still lands exactly on target either
- * way. Deterministic from (rtp, instantCrashRate) alone, so a later reveal
- * recomputing this from the same stored settings reproduces it exactly.
+ * value at u=0), so it must be comfortably above 1.00 — not merely >= 1.00.
+ * `floor(raw * 100) / 100` rounds *down* to cents, so even a continuousEdge
+ * of exactly 1.00 (or anywhere in [1.00, 1.01)) still floors a thin slice
+ * of genuinely-continuous draws down to exactly 1.00 — indistinguishable
+ * from an instant bust once rounded, even though `raw` itself never
+ * dipped below continuousEdge. Both failure modes — continuousEdge below
+ * 1.00 (draws go negative-multiplier-adjacent and get clamped) and
+ * continuousEdge in [1.00, 1.01) (draws get floored into the 1.00 cent)
+ * — silently inflate the *observed* 1.00x rate past the configured
+ * instantCrashRate while still hitting the target RTP exactly (verified
+ * by simulation: e.g. rtp=94 with instantCrashRate=3 measured ~7%, not 3%
+ * — using only the first fix, `effective = max(instantCrashRate, 100 -
+ * rtp)`, still measured ~7% instead of the intended ~6.9%). Since RTP is
+ * the actual financial house-edge commitment, `effective` raises
+ * instantCrashRate to whatever's needed to keep continuousEdge >= 1.01 —
+ * i.e. for (rtp, instantCrashRate) pairs where `rtp + instantCrashRate` is
+ * too low, the observed instant-crash rate is `100 - (100/101)*rtp`
+ * instead of the configured value, and RTP still lands exactly on target
+ * either way. Deterministic from (rtp, instantCrashRate) alone, so a later
+ * reveal recomputing this from the same stored settings reproduces it
+ * exactly.
  */
 export function computeCrashPoint(
   serverSeed: string,
@@ -102,7 +113,11 @@ export function computeCrashPoint(
   const h = parseInt(hmac.slice(0, 13), 16);
   const e = Math.pow(2, 52);
 
-  const effective = Math.max(instantCrashRate, 100 - rtp);
+  // The smallest instantCrashRate that keeps continuousEdge = rtp / (1 -
+  // effective/100) at or above 1.01 — see doc comment above for why 1.00
+  // isn't a large enough margin.
+  const floorSafeRate = 100 - (100 / 101) * rtp;
+  const effective = Math.max(instantCrashRate, floorSafeRate);
   const instantCrashThreshold = (effective / 100) * e;
   if (h < instantCrashThreshold) return 1.0;
 

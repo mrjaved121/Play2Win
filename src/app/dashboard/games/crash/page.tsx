@@ -9,12 +9,11 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { Button } from "@/components/ui/Button";
 import { StatTile } from "@/components/dashboard/StatTile";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { INSTANT_CRASH_RATE_OPTIONS, RTP_OPTIONS } from "@/lib/crash/settingsOptions";
 import { transactionStatusVisual } from "@/lib/status";
 import { formatCredits, formatDateTime } from "@/lib/utils";
 import type { CrashLiveStatus, CrashSettings, Paginated, Transaction } from "@/lib/types";
 
-const RTP_OPTIONS = [95, 96, 97];
-const INSTANT_CRASH_RATE_OPTIONS = [3, 4, 5, 6, 7];
 const LIVE_POLL_MS = 2000;
 
 /** Mirrors engine.ts's multiplierAtElapsed — duplicated here since that module pulls in Node's `crypto` and can't ship to the browser. */

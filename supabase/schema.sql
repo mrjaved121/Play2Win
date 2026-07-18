@@ -119,7 +119,7 @@ create table if not exists crash_rounds (
   -- read from crash_settings at reveal time, so a later settings change
   -- can't retroactively change what a past round's provably-fair reveal is
   -- supposed to reproduce.
-  rtp numeric not null default 96,
+  rtp numeric not null default 95,
   instant_crash_rate numeric not null default 5,
   server_seed text not null,
   server_seed_hash text not null,
@@ -144,7 +144,7 @@ create index if not exists crash_rounds_player_id_idx on crash_rounds (player_id
 -- the change — see crash_rounds.rtp/instant_crash_rate above.
 create table if not exists crash_settings (
   id text primary key default 'default',
-  rtp numeric not null default 96,
+  rtp numeric not null default 95,
   instant_crash_rate numeric not null default 5,
   min_bet numeric not null default 20,
   max_bet numeric not null default 500,
