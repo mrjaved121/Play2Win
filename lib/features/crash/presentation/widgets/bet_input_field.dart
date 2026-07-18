@@ -2,14 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../../core/theme/theme.dart';
-import '../../domain/crash_constants.dart';
 
 /// Free-text bet entry with a trailing Clear (X) button — sits alongside
 /// [QuickBetRow]'s one-tap presets rather than replacing them.
 class BetInputField extends StatefulWidget {
-  const BetInputField({required this.value, required this.onChanged, required this.enabled, super.key});
+  const BetInputField({
+    required this.value,
+    required this.minBet,
+    required this.onChanged,
+    required this.enabled,
+    super.key,
+  });
 
   final int value;
+
+  /// Live admin-configured floor (see [CrashSharedState.minBet]) — what
+  /// Clear resets the field to.
+  final int minBet;
   final ValueChanged<int> onChanged;
   final bool enabled;
 
@@ -46,7 +55,7 @@ class _BetInputFieldState extends State<BetInputField> {
 
   void _clear() {
     _controller.clear();
-    widget.onChanged(CrashConstants.minBet);
+    widget.onChanged(widget.minBet);
   }
 
   @override

@@ -176,4 +176,12 @@ class CrashApiClient {
   Future<Map<String, dynamic>> fetchLeaderboard() {
     return _get('/api/public/crash/leaderboard', const <String, String>{});
   }
+
+  /// Live min/max bet (and rtp/instantCrashRate) as currently set from the
+  /// admin dashboard — same response for every caller. See
+  /// [[CrashSharedNotifier]]'s `_loadSettings` for how this overrides the
+  /// static [CrashConstants] fallback once fetched.
+  Future<Map<String, dynamic>> fetchSettings() {
+    return _get('/api/public/crash/settings', const <String, String>{});
+  }
 }

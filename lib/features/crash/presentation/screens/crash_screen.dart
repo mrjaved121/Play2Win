@@ -86,9 +86,9 @@ class CrashScreen extends ConsumerWidget {
                   const SizedBox(height: AppSpacing.sm),
                   SizedBox(height: 240, child: MultiplierStage(state: active)),
                   const SizedBox(height: AppSpacing.sm),
-                  _panelFor(ref, CrashSlotId.slot1, slot1, shared.balance),
+                  _panelFor(ref, CrashSlotId.slot1, slot1, shared),
                   const SizedBox(height: AppSpacing.sm),
-                  _panelFor(ref, CrashSlotId.slot2, slot2, shared.balance),
+                  _panelFor(ref, CrashSlotId.slot2, slot2, shared),
                   const SizedBox(height: AppSpacing.sm),
                   const PlatformStatsBar(),
                   const SizedBox(height: AppSpacing.sm),
@@ -108,11 +108,13 @@ class CrashScreen extends ConsumerWidget {
     );
   }
 
-  Widget _panelFor(WidgetRef ref, CrashSlotId id, CrashSlotState state, int? balance) {
+  Widget _panelFor(WidgetRef ref, CrashSlotId id, CrashSlotState state, CrashSharedState shared) {
     final CrashSlotNotifier notifier = ref.read(crashSlotProvider(id).notifier);
     return CrashBetPanel(
       state: state,
-      balance: balance,
+      balance: shared.balance,
+      minBet: shared.minBet,
+      maxBet: shared.maxBet,
       onSetBet: notifier.setBet,
       onPlaceBet: notifier.placeBet,
       onCollect: notifier.collect,

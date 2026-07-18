@@ -2,14 +2,21 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/theme.dart';
 import '../../../../core/widgets/widgets.dart';
-import '../../domain/crash_constants.dart';
 
-/// One-tap preset bet amounts (see [CrashConstants.quickBetPresets]) as a
-/// 2x3 grid, highlighting whichever preset matches the current bet.
+/// One-tap preset bet amounts — [presets] is the caller's quick-bet list,
+/// pre-filtered to the live min/max bet range — as a 2x3 grid, highlighting
+/// whichever preset matches the current bet.
 class QuickBetRow extends StatelessWidget {
-  const QuickBetRow({required this.currentBet, required this.onSelect, required this.enabled, super.key});
+  const QuickBetRow({
+    required this.currentBet,
+    required this.presets,
+    required this.onSelect,
+    required this.enabled,
+    super.key,
+  });
 
   final int currentBet;
+  final List<int> presets;
   final ValueChanged<int> onSelect;
   final bool enabled;
 
@@ -17,7 +24,6 @@ class QuickBetRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const List<int> presets = CrashConstants.quickBetPresets;
     final List<Widget> rows = <Widget>[];
     for (int i = 0; i < presets.length; i += _columns) {
       final List<int> rowPresets = presets.skip(i).take(_columns).toList();

@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../../../core/theme/theme.dart';
 import '../../../../core/widgets/widgets.dart';
+import '../../domain/crash_constants.dart';
 import '../providers/crash_providers.dart';
 import 'auto_cashout_row.dart';
 import 'autoplay_control.dart';
@@ -18,6 +19,8 @@ class CrashBetPanel extends StatelessWidget {
   const CrashBetPanel({
     required this.state,
     required this.balance,
+    required this.minBet,
+    required this.maxBet,
     required this.onSetBet,
     required this.onPlaceBet,
     required this.onCollect,
@@ -34,6 +37,12 @@ class CrashBetPanel extends StatelessWidget {
   /// checked against it here rather than on [CrashSlotState] itself, since
   /// balance isn't per-panel.
   final int? balance;
+
+  /// Live admin-configured bet bounds (see [CrashSharedState.minBet]/`maxBet`)
+  /// — not per-panel either, but threaded through explicitly (rather than
+  /// read via `ref` here) since this widget is otherwise plain/stateless.
+  final int minBet;
+  final int maxBet;
   final ValueChanged<int> onSetBet;
   final VoidCallback onPlaceBet;
   final VoidCallback onCollect;
@@ -41,6 +50,16 @@ class CrashBetPanel extends StatelessWidget {
   final AutoplayEnableCallback onEnableAutoplay;
   final VoidCallback onDisableAutoplay;
   final ValueChanged<double?> onSetAutoCashout;
+
+  /// [CrashConstants.quickBetPresets] filtered to the live [minBet]/[maxBet]
+  /// range, so a preset admin has since put out of range (e.g. lowering
+  /// maxBet below it) never shows a chip the server would reject. Falls
+  /// back to the bounds themselves if that empties the list out entirely.
+  List<int> get _quickBetPresets {
+    final List<int> inRange =
+        CrashConstants.quickBetPresets.where((int p) => p >= minBet && p <= maxBet).toList();
+    return inRange.isNotEmpty ? inRange : <int>[minBet, maxBet];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,7 +72,12 @@ class CrashBetPanel extends StatelessWidget {
           children: <Widget>[
             Expanded(
               flex: 2,
-              child: BetInputField(value: state.bet, onChanged: onSetBet, enabled: !state.autoplayEnabled),
+              child: BetInputField(
+                value: state.bet,
+                minBet: minBet,
+                onChanged: onSetBet,
+                enabled: !state.autoplayEnabled,
+              ),
             ),
             const SizedBox(width: AppSpacing.sm),
             Expanded(
@@ -73,7 +97,12 @@ class CrashBetPanel extends StatelessWidget {
             children: <Widget>[
               Expanded(
                 flex: 2,
-                child: QuickBetRow(currentBet: state.bet, onSelect: onSetBet, enabled: !state.autoplayEnabled),
+                child: QuickBetRow(
+                  currentBet: state.bet,
+                  presets: _quickBetPresets,
+                  onSelect: onSetBet,
+                  enabled: !state.autoplayEnabled,
+                ),
               ),
               const SizedBox(width: AppSpacing.sm),
               Expanded(child: _PlaceBetButton(state: state, balance: balance, onPressed: onPlaceBet)),

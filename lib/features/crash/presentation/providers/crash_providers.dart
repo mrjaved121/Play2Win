@@ -57,6 +57,8 @@ class CrashSharedState {
     this.sessionBetsCount = 0,
     this.sessionTotalBet = 0,
     this.sessionTotalWinnings = 0,
+    this.minBet = CrashConstants.minBet,
+    this.maxBet = CrashConstants.maxBet,
   });
 
   final int? balance;
@@ -83,6 +85,12 @@ class CrashSharedState {
   final int sessionTotalBet;
   final int sessionTotalWinnings;
 
+  /// Live-fetched from admin settings (see [CrashSharedNotifier._loadSettings])
+  /// — [CrashConstants.minBet]/[maxBet] are only the pre-fetch/fetch-failed
+  /// fallback, not a ceiling the server actually enforces.
+  final int minBet;
+  final int maxBet;
+
   int get sessionNet => sessionTotalWinnings - sessionTotalBet;
 
   CrashSharedState copyWith({
@@ -93,6 +101,8 @@ class CrashSharedState {
     int? sessionBetsCount,
     int? sessionTotalBet,
     int? sessionTotalWinnings,
+    int? minBet,
+    int? maxBet,
   }) {
     return CrashSharedState(
       balance: balance ?? this.balance,
@@ -102,6 +112,8 @@ class CrashSharedState {
       sessionBetsCount: sessionBetsCount ?? this.sessionBetsCount,
       sessionTotalBet: sessionTotalBet ?? this.sessionTotalBet,
       sessionTotalWinnings: sessionTotalWinnings ?? this.sessionTotalWinnings,
+      minBet: minBet ?? this.minBet,
+      maxBet: maxBet ?? this.maxBet,
     );
   }
 }
@@ -112,6 +124,7 @@ class CrashSharedNotifier extends Notifier<CrashSharedState> {
     if (ApiConfig.isConfigured) {
       unawaited(_loadBalance());
       unawaited(_loadHistory());
+      unawaited(_loadSettings());
     }
     return CrashSharedState(balanceLoading: ApiConfig.isConfigured);
   }
@@ -135,6 +148,18 @@ class CrashSharedNotifier extends Notifier<CrashSharedState> {
     try {
       final List<CrashHistoryEntry> history = await _repo.fetchHistory(_guestId, accessToken: _accessToken);
       state = state.copyWith(history: history);
+    } catch (_) {
+      // Ignored — see doc comment.
+    }
+  }
+
+  /// Best-effort, same as [_loadHistory] — a fetch failure just leaves the
+  /// static [CrashConstants] defaults in place, which the server enforces
+  /// independently regardless of whether this ever completes.
+  Future<void> _loadSettings() async {
+    try {
+      final Map<String, dynamic> json = await ref.read(crashApiClientProvider).fetchSettings();
+      state = state.copyWith(minBet: (json['minBet'] as num).toInt(), maxBet: (json['maxBet'] as num).toInt());
     } catch (_) {
       // Ignored — see doc comment.
     }
@@ -313,7 +338,8 @@ class CrashSlotNotifier extends Notifier<CrashSlotState> {
   /// or free-text entry alike.
   void setBet(int amount) {
     if (state.phase != CrashPhase.idle) return;
-    state = state.copyWith(bet: amount.clamp(CrashConstants.minBet, CrashConstants.maxBet));
+    final CrashSharedState shared = ref.read(crashSharedProvider);
+    state = state.copyWith(bet: amount.clamp(shared.minBet, shared.maxBet));
   }
 
   /// `null` means manual cash-out only (the default).
