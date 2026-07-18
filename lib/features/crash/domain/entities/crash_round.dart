@@ -24,6 +24,7 @@ class CrashRound {
     this.resolvedMultiplier,
     this.crashPoint,
     this.serverSeed,
+    this.voided = false,
   });
 
   final String roundId;
@@ -40,6 +41,12 @@ class CrashRound {
   final double? resolvedMultiplier;
   final double? crashPoint;
   final String? serverSeed;
+
+  /// True only for a round an admin ended via the emergency-stop "refund
+  /// all" action — [status] is still [CrashRoundStatus.crashed] (never a
+  /// win) but [payout] is the full bet back, not a genuine outcome. See
+  /// the admin backend's `CrashRepository.emergencyStopAll`.
+  final bool voided;
 
   /// What the climbing multiplier reads *right now*, purely from elapsed
   /// wall-clock time — this is what lets the UI render smoothly between
@@ -60,6 +67,7 @@ class CrashRound {
         resolvedMultiplier: (json['resolvedMultiplier'] as num?)?.toDouble(),
         crashPoint: (json['crashPoint'] as num?)?.toDouble(),
         serverSeed: json['serverSeed'] as String?,
+        voided: json['voided'] as bool? ?? false,
       );
 }
 
@@ -85,24 +93,38 @@ class CrashHistoryEntry {
     required this.roundId,
     required this.bet,
     required this.multiplier,
+    required this.crashPoint,
     required this.winAmount,
     required this.isWin,
     required this.timestamp,
+    this.voided = false,
   });
 
   final String roundId;
   final int bet;
+
+  /// The multiplier actually cashed out at — only meaningful when [isWin]
+  /// (a lost round never cashed out, so this equals [crashPoint] server-side
+  /// rather than a real "odds achieved").
   final double multiplier;
+
+  /// Where this round actually busted, win or lose — always populated.
+  final double crashPoint;
   final int winAmount;
   final bool isWin;
   final DateTime timestamp;
+
+  /// See [CrashRound.voided] — an admin-refunded round, not a real win or loss.
+  final bool voided;
 
   factory CrashHistoryEntry.fromJson(Map<String, dynamic> json) => CrashHistoryEntry(
         roundId: json['roundId'] as String,
         bet: (json['bet'] as num).toInt(),
         multiplier: (json['multiplier'] as num).toDouble(),
+        crashPoint: (json['crashPoint'] as num).toDouble(),
         winAmount: (json['winAmount'] as num).toInt(),
         isWin: json['isWin'] as bool,
         timestamp: DateTime.parse(json['timestamp'] as String),
+        voided: json['voided'] as bool? ?? false,
       );
 }

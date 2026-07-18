@@ -17,7 +17,7 @@ class CrashApiException implements Exception {
 }
 
 /// Talks to blackhole_admin's `/api/games/crash/*` routes. Every method
-/// here is a plain request/response call — see [[CrashGameNotifier]] for
+/// here is a plain request/response call — see [[CrashSlotNotifier]] for
 /// how the climbing multiplier is rendered locally between these calls
 /// instead of polling for it.
 class CrashApiClient {
@@ -147,7 +147,7 @@ class CrashApiClient {
   /// This player's past resolved rounds, most recent first — powers the
   /// round history strip. Called once when the crash screen loads rather
   /// than after every round, since this session's own rounds are already
-  /// appended locally as they resolve (see [[CrashGameNotifier]]).
+  /// appended locally as they resolve (see [[CrashSlotNotifier]]).
   Future<Map<String, dynamic>> fetchHistory(String guestId, {String? accessToken}) {
     return _get(
       '/api/games/crash/history',
@@ -168,5 +168,12 @@ class CrashApiClient {
       <String, dynamic>{'guestId': guestId},
       accessToken: accessToken,
     );
+  }
+
+  /// Platform-wide activity (not per-player) — hits `/api/public/crash/*`
+  /// rather than `/api/games/crash/*` since it's the same response for
+  /// every caller, no guestId/accessToken involved.
+  Future<Map<String, dynamic>> fetchLeaderboard() {
+    return _get('/api/public/crash/leaderboard', const <String, String>{});
   }
 }

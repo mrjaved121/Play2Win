@@ -135,7 +135,7 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                 const SizedBox(height: AppSpacing.sm),
                 _PlayerIdRow(
-                  playerId: ref.watch(crashGameProvider.select((CrashUiState s) => s.playerId)),
+                  playerId: ref.watch(crashSharedProvider.select((CrashSharedState s) => s.playerId)),
                 ),
                 const SizedBox(height: AppSpacing.xl),
                 PremiumCard(
@@ -235,7 +235,7 @@ class ProfileScreen extends ConsumerWidget {
 /// The server-side `players.id` this device/account resolves to — the
 /// same id admin sees in the Players list drawer, so a player can quote
 /// it for support. Distinct from the local guestId (device lookup key
-/// only, not admin-searchable) — see CrashUiState.playerId's doc comment.
+/// only, not admin-searchable) — see CrashSharedState.playerId's doc comment.
 /// Shows "Syncing…" until the first balance fetch completes rather than
 /// falling back to the guestId, since showing a value that later changes
 /// to a different one would be more confusing than a brief wait.

@@ -44,5 +44,8 @@ abstract final class AssetPaths {
   static const String sfxBigWin = '$sfx/big_win.m4a';
   static const String sfxJackpot = '$sfx/jackpot.m4a';
   static const String sfxCoinCollect = '$sfx/coin_collect.m4a';
+  // No asset file ships for this yet — playSfx's existing missing-asset
+  // fallback makes this a silent no-op until crash.m4a is added here.
+  static const String sfxCrash = '$sfx/crash.m4a';
   static const String musicBackground = '$music/background_loop.m4a';
 }

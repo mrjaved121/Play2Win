@@ -17,6 +17,7 @@ enum SfxType {
   bigWin,
   jackpot,
   coinCollect,
+  crash,
 }
 
 /// Abstraction over audio playback so presentation/game code never talks
@@ -78,6 +79,7 @@ class JustAudioService implements AudioService {
         SfxType.bigWin => AssetPaths.sfxBigWin,
         SfxType.jackpot => AssetPaths.sfxJackpot,
         SfxType.coinCollect => AssetPaths.sfxCoinCollect,
+        SfxType.crash => AssetPaths.sfxCrash,
       };
 
   @override

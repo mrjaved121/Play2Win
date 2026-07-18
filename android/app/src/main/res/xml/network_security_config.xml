@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Permits plain-HTTP traffic to the local dev machine only, so a
+  release/profile build can reach `next dev` (blackhole_admin) over the LAN
+  or the Android emulator's host loopback while testing. Everything else
+  (Supabase, any real deployment) stays HTTPS-only under the platform
+  default.
+-->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">192.168.100.4</domain>
+        <domain includeSubdomains="false">10.0.2.2</domain>
+    </domain-config>
+</network-security-config>
