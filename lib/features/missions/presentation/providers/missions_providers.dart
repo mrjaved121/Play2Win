@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/services/storage_service.dart';
 import '../../../slot/presentation/providers/game_providers.dart';
@@ -72,6 +73,7 @@ class MissionsProgressNotifier extends Notifier<MissionsProgress> {
   }
 
   void claim(String missionId) {
+    if (!AppConstants.missionsEnabled) return;
     final MissionDefinition def =
         MissionDefinition.catalog.firstWhere((MissionDefinition m) => m.id == missionId);
     final int baseline = state.baselines[missionId] ?? 0;

@@ -103,14 +103,15 @@ class _LobbyScreenState extends ConsumerState<LobbyScreen> {
                 jackpot: game.jackpot,
                 onPlay: () => context.pushNamed(RouteNames.playSlots),
               ),
-              DailyBonusCard(
-                spinsCompleted: dailyCompleted,
-                spinsRequired: AppConstants.dailyBonusRequiredSpins,
-                rewardCoins: AppConstants.dailyBonusReward,
-                claimed: dailyClaimed,
-                onTap: () => context.pushNamed(RouteNames.rewards),
-                onClaim: () => ref.read(dailyBonusProvider.notifier).claim(),
-              ),
+              if (AppConstants.dailyBonusEnabled)
+                DailyBonusCard(
+                  spinsCompleted: dailyCompleted,
+                  spinsRequired: AppConstants.dailyBonusRequiredSpins,
+                  rewardCoins: AppConstants.dailyBonusReward,
+                  claimed: dailyClaimed,
+                  onTap: () => context.pushNamed(RouteNames.rewards),
+                  onClaim: () => ref.read(dailyBonusProvider.notifier).claim(),
+                ),
             ],
           ),
           const SizedBox(height: AppSpacing.xl),

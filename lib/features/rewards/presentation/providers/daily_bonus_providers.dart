@@ -38,6 +38,7 @@ class DailyBonusNotifier extends Notifier<DailyBonusState> {
   }
 
   void claim() {
+    if (!AppConstants.dailyBonusEnabled) return;
     final int currentSpins = ref.read(gameProvider).totalSpins;
     final int completed = currentSpins - state.spinsBaseline;
     if (completed < AppConstants.dailyBonusRequiredSpins || state.claimed) return;

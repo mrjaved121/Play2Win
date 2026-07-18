@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../core/widgets/widgets.dart';
 import '../../domain/entities/mission_definition.dart';
@@ -16,6 +17,8 @@ class MissionsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (!AppConstants.missionsEnabled) return const _MissionsComingSoon();
+
     final List<MissionProgressView> views = ref.watch(missionViewsProvider);
     final List<MissionProgressView> daily =
         views.where((MissionProgressView v) => v.definition.period == MissionPeriod.daily).toList();
@@ -50,6 +53,40 @@ class MissionsScreen extends ConsumerWidget {
             const SizedBox(height: AppSpacing.md),
           ],
         ],
+      ),
+    );
+  }
+}
+
+/// Shown instead of the real mission list while [AppConstants.missionsEnabled]
+/// is off — the tab itself stays reachable (no bottom-nav restructuring)
+/// but grants nothing.
+class _MissionsComingSoon extends StatelessWidget {
+  const _MissionsComingSoon();
+
+  @override
+  Widget build(BuildContext context) {
+    return ScreenBackground(
+      wrapInScaffold: false,
+      bottom: false,
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.xl),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              const Icon(Icons.emoji_events_rounded, size: 48, color: AppColors.textMuted),
+              const SizedBox(height: AppSpacing.md),
+              Text('Missions', style: AppTextStyles.titleLarge),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                'Coming soon.',
+                textAlign: TextAlign.center,
+                style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

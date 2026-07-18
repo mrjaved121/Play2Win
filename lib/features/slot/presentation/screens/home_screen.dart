@@ -22,6 +22,7 @@ import '../../game/coin_explosion_game.dart';
 import '../../game/slot_machine_controller.dart';
 import '../providers/game_providers.dart';
 import '../widgets/bet_controls.dart';
+import '../widgets/buy_credits_sheet.dart';
 import '../widgets/coin_explosion_overlay.dart';
 import '../widgets/compact_stats_bar.dart';
 import '../widgets/daily_bonus_card.dart';
@@ -139,7 +140,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
 
     final outcome = notifier.startSpin();
     if (outcome == null) {
-      unawaited(showLowBalanceSheet(context));
+      // Zero balance has no room to top itself back up (daily bonus/
+      // missions are off, see AppConstants) — point straight at how to
+      // actually get more, rather than the general "top up" nudge that
+      // still applies when the player can afford a smaller bet.
+      if (stateBeforeSpin.balance <= 0) {
+        unawaited(showBuyCreditsSheet(context));
+      } else {
+        unawaited(showLowBalanceSheet(context));
+      }
       return;
     }
     if (!wasFreeSpin) {
@@ -412,6 +421,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
           winStreak: game.winStreak,
           offerRemaining: const Duration(minutes: 2, seconds: 27),
           onDailyBonusTap: () => context.pushNamed(RouteNames.rewards),
+          showDailyBonus: AppConstants.dailyBonusEnabled,
         ),
         _buildReelArea(maxWidth: 380),
         const SizedBox(height: AppSpacing.sm),
@@ -430,15 +440,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
-                DailyBonusCard(
-                  spinsCompleted: ref.watch(dailyBonusSpinsCompletedProvider),
-                  claimed: ref.watch(dailyBonusProvider).claimed,
-                  spinsRequired: AppConstants.dailyBonusRequiredSpins,
-                  rewardCoins: AppConstants.dailyBonusReward,
-                  onTap: () => context.pushNamed(RouteNames.rewards),
-                  onClaim: () => ref.read(dailyBonusProvider.notifier).claim(),
-                ),
-                const SizedBox(height: AppSpacing.md),
+                if (AppConstants.dailyBonusEnabled) ...<Widget>[
+                  DailyBonusCard(
+                    spinsCompleted: ref.watch(dailyBonusSpinsCompletedProvider),
+                    claimed: ref.watch(dailyBonusProvider).claimed,
+                    spinsRequired: AppConstants.dailyBonusRequiredSpins,
+                    rewardCoins: AppConstants.dailyBonusReward,
+                    onTap: () => context.pushNamed(RouteNames.rewards),
+                    onClaim: () => ref.read(dailyBonusProvider.notifier).claim(),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                ],
                 WinStreakCard(streak: game.winStreak, streakBonusCoins: game.winStreak * 20),
                 const SizedBox(height: AppSpacing.md),
                 StatsRow(lastWin: game.lastWin, bestWinToday: game.bestWinToday, gamesPlayed: game.totalSpins),

@@ -16,6 +16,7 @@ class QuickStatusRow extends StatelessWidget {
     required this.winStreak,
     required this.offerRemaining,
     required this.onDailyBonusTap,
+    this.showDailyBonus = true,
     super.key,
   });
 
@@ -25,22 +26,28 @@ class QuickStatusRow extends StatelessWidget {
   final Duration offerRemaining;
   final VoidCallback onDailyBonusTap;
 
+  /// False hides the badge entirely (see AppConstants.dailyBonusEnabled)
+  /// rather than showing one that does nothing when tapped.
+  final bool showDailyBonus;
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
         children: <Widget>[
-          PressableScale(
-            onTap: onDailyBonusTap,
-            child: BadgePill(
-              label: dailyBonusReady ? 'BONUS READY' : 'BONUS $dailyBonusProgress',
-              icon: Icons.card_giftcard_rounded,
-              color: AppColors.success,
-              filled: dailyBonusReady,
+          if (showDailyBonus) ...<Widget>[
+            PressableScale(
+              onTap: onDailyBonusTap,
+              child: BadgePill(
+                label: dailyBonusReady ? 'BONUS READY' : 'BONUS $dailyBonusProgress',
+                icon: Icons.card_giftcard_rounded,
+                color: AppColors.success,
+                filled: dailyBonusReady,
+              ),
             ),
-          ),
-          const SizedBox(width: AppSpacing.sm),
+            const SizedBox(width: AppSpacing.sm),
+          ],
           if (winStreak > 0) ...<Widget>[
             BadgePill(label: '$winStreak STREAK', icon: Icons.local_fire_department_rounded, color: AppColors.orange),
             const SizedBox(width: AppSpacing.sm),

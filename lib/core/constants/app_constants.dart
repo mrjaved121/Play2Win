@@ -6,11 +6,19 @@ abstract final class AppConstants {
   // ---------------------------------------------------------------------
   // Wallet / economy defaults
   // ---------------------------------------------------------------------
-  static const int startingBalance = 500;
+  static const int startingBalance = 1000;
   static const int minBet = 10;
   static const int maxBet = 500;
   static const int betStep = 10;
   static const int defaultBet = 20;
+
+  // ---------------------------------------------------------------------
+  // Free-coin sources — off for now so a new player's balance can only
+  // ever go down from [startingBalance], never up, short of a real
+  // purchase. Flip back on to re-enable; nothing else needs to change.
+  // ---------------------------------------------------------------------
+  static const bool dailyBonusEnabled = false;
+  static const bool missionsEnabled = false;
 
   // ---------------------------------------------------------------------
   // Daily bonus
