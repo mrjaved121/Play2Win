@@ -15,7 +15,7 @@ export const DEFAULT_RTP: number = 95;
 
 /** Percent of rounds forced to crash at 1.00x, independent of RTP. */
 export const INSTANT_CRASH_RATE_OPTIONS = [3, 4, 5, 6, 7] as const;
-export const DEFAULT_INSTANT_CRASH_RATE: number = 5;
+export const DEFAULT_INSTANT_CRASH_RATE: number = 6;
 
 export const MIN_BET_RANGE = { min: 10, max: 50 } as const;
 export const MAX_BET_RANGE = { min: 100, max: 1000 } as const;
