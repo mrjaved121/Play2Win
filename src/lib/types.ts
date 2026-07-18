@@ -263,6 +263,18 @@ export interface CrashRoundPublic {
   resolvedMultiplier?: number;
   crashPoint?: number;
   serverSeed?: string;
+  /** The RTP/instant-crash-rate settings live when this round started — see engine.ts's computeCrashPoint doc comment. */
+  rtp?: number;
+  instantCrashRate?: number;
+  /**
+   * True only for a round an admin ended via the emergency-stop "refund
+   * all" action (see CrashRepository.emergencyStopAll) — `status` is still
+   * "crashed" (never "collected", since this isn't a win) but `payout`
+   * equals the full bet back, not a genuine outcome. Never set by ordinary
+   * gameplay, and never targets one player — see the repository doc
+   * comment for why.
+   */
+  voided?: boolean;
 }
 
 /**
@@ -275,7 +287,67 @@ export interface CrashHistoryEntry {
   bet: number;
   /** Cashed-out multiplier if won, or the crash point if lost. */
   multiplier: number;
+  /** Where this round actually busted, win or lose — the provably-fair reveal, always populated once resolved. */
+  crashPoint: number;
   winAmount: number;
   isWin: boolean;
   timestamp: string;
+  /** See CrashRoundPublic.voided — an admin-refunded round, not a real win or loss. */
+  voided?: boolean;
+}
+
+/** One row in the platform-wide crash leaderboard — no player id, just a display name. */
+export interface CrashLeaderboardEntry {
+  playerName: string;
+  bet: number;
+  multiplier: number;
+  payout: number;
+}
+
+/** Platform-wide (not per-player) crash activity — backs the mobile app's "Leaderboard"/"Stats" tabs. */
+export interface CrashLeaderboard {
+  totalBets: number;
+  totalWagered: number;
+  totalPayout: number;
+  topWins: CrashLeaderboardEntry[];
+  topBets: CrashLeaderboardEntry[];
+}
+
+/**
+ * Admin-adjustable, global (not per-player) Multiplier Climb parameters —
+ * see src/lib/crash/engine.ts for the option sets/ranges these are
+ * validated against and CrashSettingsRepository for storage. Changes only
+ * affect rounds started *after* the change; an in-flight round keeps the
+ * rtp/instantCrashRate it was minted with (see CrashRoundPublic).
+ */
+export interface CrashSettings {
+  rtp: number;
+  instantCrashRate: number;
+  minBet: number;
+  maxBet: number;
+  updatedAt: string;
+}
+
+/**
+ * One still-flying round, as shown in the admin "live round monitor" —
+ * note there's no single platform-wide "current round": Multiplier Climb
+ * gives each player their own independent flight (see
+ * CrashRepository.placeBet's `findJoinableRound` doc comment), so this is
+ * a snapshot across *all* players' currently-pending rounds at once.
+ */
+export interface CrashLiveRoundEntry {
+  roundId: string;
+  playerId: string;
+  playerName: string;
+  betAmount: number;
+  startedAt: string;
+  growthRate: number;
+}
+
+export interface CrashLiveStatus {
+  rounds: CrashLiveRoundEntry[];
+  activeBets: number;
+  totalWagered: number;
+  /** Server clock at response time — lets the admin UI compute "multiplier right now" without trusting its own clock. */
+  serverTime: string;
 }

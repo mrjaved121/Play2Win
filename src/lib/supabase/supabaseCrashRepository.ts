@@ -5,15 +5,20 @@ import {
   generateServerSeed,
   GROWTH_RATE,
   hashServerSeed,
-  MAX_BET,
-  MIN_BET,
   multiplierAtElapsed,
   secondsUntilCrash,
 } from "@/lib/crash/engine";
 import { getSupabaseServerClient } from "@/lib/supabase/client";
 import { findOrCreateAccountPlayer, resolvePlayer } from "@/lib/supabase/playerResolution";
+import { supabaseCrashSettingsRepository } from "@/lib/supabase/supabaseCrashSettingsRepository";
 import type { CrashRepository } from "@/lib/repositories/types";
-import type { CrashHistoryEntry, CrashRoundPublic } from "@/lib/types";
+import type {
+  CrashHistoryEntry,
+  CrashLeaderboard,
+  CrashLeaderboardEntry,
+  CrashLiveRoundEntry,
+  CrashRoundPublic,
+} from "@/lib/types";
 
 interface CrashRoundRow {
   id: string;
@@ -21,6 +26,8 @@ interface CrashRoundRow {
   bet_amount: number;
   growth_rate: number;
   crash_point: number;
+  rtp: number;
+  instant_crash_rate: number;
   server_seed: string;
   server_seed_hash: string;
   status: CrashRoundPublic["status"];
@@ -28,6 +35,8 @@ interface CrashRoundRow {
   resolved_multiplier: number | null;
   started_at: string;
   resolved_at: string | null;
+  voided: boolean;
+  players?: { display_name?: string } | null;
 }
 
 function toHistoryEntry(row: CrashRoundRow): CrashHistoryEntry {
@@ -35,9 +44,11 @@ function toHistoryEntry(row: CrashRoundRow): CrashHistoryEntry {
     roundId: row.id,
     bet: Number(row.bet_amount),
     multiplier: row.status === "collected" ? Number(row.resolved_multiplier) : Number(row.crash_point),
+    crashPoint: Number(row.crash_point),
     winAmount: row.payout != null ? Number(row.payout) : 0,
     isWin: row.status === "collected",
     timestamp: row.resolved_at ?? row.started_at,
+    voided: row.voided,
   };
 }
 
@@ -73,6 +84,9 @@ function toPublic(row: CrashRoundRow): CrashRoundPublic {
     serverSeedHash: row.server_seed_hash,
     payout: row.payout != null ? Number(row.payout) : undefined,
     resolvedMultiplier: row.resolved_multiplier != null ? Number(row.resolved_multiplier) : undefined,
+    rtp: row.rtp != null ? Number(row.rtp) : undefined,
+    instantCrashRate: row.instant_crash_rate != null ? Number(row.instant_crash_rate) : undefined,
+    voided: row.voided,
     ...(reveal ? { crashPoint: Number(row.crash_point), serverSeed: row.server_seed } : {}),
   };
 }
@@ -80,6 +94,28 @@ function toPublic(row: CrashRoundRow): CrashRoundPublic {
 async function findGameId(supabase: SupabaseClient): Promise<string | undefined> {
   const { data } = await supabase.from("games").select("id").eq("name", "Multiplier Climb").maybeSingle();
   return (data?.id as string | undefined) ?? undefined;
+}
+
+/**
+ * A still-flying round (its hidden crash time hasn't passed yet) this
+ * player already has, if any — lets a second bet ride the same flight as
+ * an earlier one instead of always starting a fresh crash point. Not
+ * gated on `status`: a round the player already collected is still a
+ * valid flight to join, since the underlying rocket keeps climbing for
+ * anyone else riding it until the crash point actually passes.
+ */
+async function findJoinableRound(supabase: SupabaseClient, playerId: string): Promise<CrashRoundRow | undefined> {
+  const { data } = await supabase
+    .from("crash_rounds")
+    .select("*")
+    .eq("player_id", playerId)
+    .order("started_at", { ascending: false })
+    .limit(5);
+  const candidates = (data ?? []) as CrashRoundRow[];
+  return candidates.find((r) => {
+    const elapsedSeconds = (Date.now() - new Date(r.started_at).getTime()) / 1000;
+    return elapsedSeconds < secondsUntilCrash(Number(r.crash_point));
+  });
 }
 
 /**
@@ -121,20 +157,29 @@ export const supabaseCrashRepository: CrashRepository = {
   },
 
   async placeBet({ guestId, betAmount, accessToken }) {
-    if (!Number.isFinite(betAmount) || betAmount < MIN_BET || betAmount > MAX_BET) {
-      throw new Error(`Bet must be between ${MIN_BET} and ${MAX_BET} credits`);
+    const settings = await supabaseCrashSettingsRepository.get();
+    if (!Number.isFinite(betAmount) || betAmount < settings.minBet || betAmount > settings.maxBet) {
+      throw new Error(`Bet must be between ${settings.minBet} and ${settings.maxBet} credits`);
     }
     const supabase = getSupabaseServerClient();
     const player = await resolvePlayer(supabase, guestId, accessToken);
     const balance = Number(player.credit_balance);
     if (balance < betAmount) throw new Error("Insufficient balance");
 
-    const serverSeed = generateServerSeed();
     // The round id feeds the crash-point HMAC, so it's minted here rather
     // than left to Postgres's default so we can compute crashPoint before
-    // the insert.
+    // the insert — except when joining an existing flight, where the
+    // crash point/seed/rtp/instantCrashRate must be copied verbatim (NOT
+    // re-derived from this new id, or re-read from settings which may have
+    // changed since) so both bets share the exact same rocket.
     const roundId = randomUUID();
-    const crashPoint = computeCrashPoint(serverSeed, roundId);
+    const joinable = await findJoinableRound(supabase, player.id);
+    const serverSeed = joinable ? joinable.server_seed : generateServerSeed();
+    const rtp = joinable ? Number(joinable.rtp) : settings.rtp;
+    const instantCrashRate = joinable ? Number(joinable.instant_crash_rate) : settings.instantCrashRate;
+    const crashPoint = joinable
+      ? Number(joinable.crash_point)
+      : computeCrashPoint(serverSeed, roundId, rtp, instantCrashRate);
 
     const { data: round, error: roundError } = await supabase
       .from("crash_rounds")
@@ -144,8 +189,11 @@ export const supabaseCrashRepository: CrashRepository = {
         bet_amount: betAmount,
         growth_rate: GROWTH_RATE,
         crash_point: crashPoint,
+        rtp,
+        instant_crash_rate: instantCrashRate,
         server_seed: serverSeed,
-        server_seed_hash: hashServerSeed(serverSeed),
+        server_seed_hash: joinable ? joinable.server_seed_hash : hashServerSeed(serverSeed),
+        started_at: joinable ? joinable.started_at : new Date().toISOString(),
         status: "pending",
       })
       .select("*")
@@ -273,5 +321,151 @@ export const supabaseCrashRepository: CrashRepository = {
     const supabase = getSupabaseServerClient();
     const player = await findOrCreateAccountPlayer(supabase, { userId, email, displayName, guestId });
     return { playerId: player.id, balance: Number(player.credit_balance) };
+  },
+
+  async getLeaderboard() {
+    const supabase = getSupabaseServerClient();
+    const gameId = await findGameId(supabase);
+
+    let totals = { totalBets: 0, totalWagered: 0, totalPayout: 0 };
+    if (gameId) {
+      const { data: gameRow } = await supabase
+        .from("games")
+        .select("total_sessions, total_wagered, total_payout")
+        .eq("id", gameId)
+        .maybeSingle();
+      if (gameRow) {
+        totals = {
+          totalBets: Number(gameRow.total_sessions),
+          totalWagered: Number(gameRow.total_wagered),
+          totalPayout: Number(gameRow.total_payout),
+        };
+      }
+    }
+
+    function toEntry(row: CrashRoundRow & { players?: { display_name?: string } | null }): CrashLeaderboardEntry {
+      return {
+        playerName: row.players?.display_name ?? "Player",
+        bet: Number(row.bet_amount),
+        multiplier: row.status === "collected" ? Number(row.resolved_multiplier) : Number(row.crash_point),
+        payout: row.payout != null ? Number(row.payout) : 0,
+      };
+    }
+
+    const { data: topWinsData } = await supabase
+      .from("crash_rounds")
+      .select("*, players(display_name)")
+      .eq("status", "collected")
+      .order("payout", { ascending: false })
+      .limit(10);
+
+    const { data: topBetsData } = await supabase
+      .from("crash_rounds")
+      .select("*, players(display_name)")
+      .neq("status", "pending")
+      .order("bet_amount", { ascending: false })
+      .limit(10);
+
+    const result: CrashLeaderboard = {
+      ...totals,
+      topWins: (topWinsData ?? []).map(toEntry),
+      topBets: (topBetsData ?? []).map(toEntry),
+    };
+    return result;
+  },
+
+  async getLiveRounds() {
+    const supabase = getSupabaseServerClient();
+    const { data, error } = await supabase
+      .from("crash_rounds")
+      .select("*, players(display_name)")
+      .eq("status", "pending")
+      .order("started_at", { ascending: false });
+    if (error) throw new Error(`Supabase crash.getLiveRounds failed: ${error.message}`);
+
+    const rows = (data ?? []) as CrashRoundRow[];
+    const entries: CrashLiveRoundEntry[] = [];
+    let totalWagered = 0;
+    for (const row of rows) {
+      const elapsedSeconds = (Date.now() - new Date(row.started_at).getTime()) / 1000;
+      // See the mock repository's identical guard: don't surface a round
+      // as "live" once its hidden crash time has actually passed, but
+      // don't mutate it from this read-only admin view either.
+      if (elapsedSeconds >= secondsUntilCrash(Number(row.crash_point))) continue;
+
+      entries.push({
+        roundId: row.id,
+        playerId: row.player_id,
+        playerName: row.players?.display_name ?? "Player",
+        betAmount: Number(row.bet_amount),
+        startedAt: row.started_at,
+        growthRate: Number(row.growth_rate),
+      });
+      totalWagered += Number(row.bet_amount);
+    }
+    return { rounds: entries, activeBets: entries.length, totalWagered, serverTime: new Date().toISOString() };
+  },
+
+  async emergencyStopAll() {
+    const supabase = getSupabaseServerClient();
+    const { data, error } = await supabase.from("crash_rounds").select("*").eq("status", "pending");
+    if (error) throw new Error(`Supabase crash.emergencyStopAll lookup failed: ${error.message}`);
+    const pending = (data ?? []) as CrashRoundRow[];
+
+    let voidedCount = 0;
+    let refundedTotal = 0;
+    const gameId = await findGameId(supabase);
+
+    for (const round of pending) {
+      const betAmount = Number(round.bet_amount);
+
+      const { data: updatedRound, error: updateError } = await supabase
+        .from("crash_rounds")
+        .update({
+          status: "crashed",
+          voided: true,
+          payout: betAmount,
+          resolved_multiplier: null,
+          resolved_at: new Date().toISOString(),
+        })
+        .eq("id", round.id)
+        .eq("status", "pending")
+        .select("id")
+        .maybeSingle();
+      if (updateError) throw new Error(`Supabase crash.emergencyStopAll update failed: ${updateError.message}`);
+      if (!updatedRound) continue; // already resolved by something else (e.g. a collect that raced this) — skip
+
+      const { data: playerRow, error: playerError } = await supabase
+        .from("players")
+        .select("credit_balance")
+        .eq("id", round.player_id)
+        .single();
+      if (playerError) throw new Error(`Supabase crash.emergencyStopAll player lookup failed: ${playerError.message}`);
+
+      const newBalance = Number(playerRow.credit_balance) + betAmount;
+      const { error: balanceError } = await supabase
+        .from("players")
+        .update({ credit_balance: newBalance, last_active_at: new Date().toISOString() })
+        .eq("id", round.player_id);
+      if (balanceError) throw new Error(`Supabase crash.emergencyStopAll balance update failed: ${balanceError.message}`);
+
+      await supabase.from("transactions").insert({
+        player_id: round.player_id,
+        game_id: gameId ?? null,
+        type: "payout",
+        status: "completed",
+        amount: betAmount,
+        note: "Emergency stop — round voided, bet refunded",
+      });
+      // Undoes this round's earlier totalWagered increment so a voided
+      // round nets to zero in revenue reporting instead of reading as
+      // "wagered but never paid out".
+      if (gameId) await incrementGameStats(supabase, gameId, { total_wagered: -betAmount });
+
+      voidedCount += 1;
+      refundedTotal += betAmount;
+    }
+
+    return { voidedCount, refundedTotal };
   },
 };

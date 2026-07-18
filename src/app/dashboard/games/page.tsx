@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { Plus, Pencil, Trash2, Activity } from "lucide-react";
 import { useApi } from "@/lib/hooks/useApi";
 import { Card } from "@/components/ui/Card";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -118,6 +119,16 @@ export default function GamesPage() {
                       <td className="px-4 py-3 text-ink-secondary">{formatDate(game.releaseDate)}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1">
+                          {game.appEntryPoint === "crash" && (
+                            <Link
+                              href="/dashboard/games/crash"
+                              aria-label="Live controls for Multiplier Climb"
+                              title="Live controls"
+                              className="inline-flex size-8 items-center justify-center rounded-lg text-ink-secondary hover:bg-page hover:text-ink"
+                            >
+                              <Activity className="size-4" />
+                            </Link>
+                          )}
                           <button
                             onClick={() => {
                               setEditingGame(game);

@@ -114,16 +114,44 @@ create table if not exists crash_rounds (
   bet_amount numeric not null,
   growth_rate numeric not null,
   crash_point numeric not null,
+  -- The RTP/instant-crash-rate settings live when this round started (see
+  -- src/lib/crash/engine.ts's computeCrashPoint) — stored per-round, not
+  -- read from crash_settings at reveal time, so a later settings change
+  -- can't retroactively change what a past round's provably-fair reveal is
+  -- supposed to reproduce.
+  rtp numeric not null default 96,
+  instant_crash_rate numeric not null default 5,
   server_seed text not null,
   server_seed_hash text not null,
   status text not null default 'pending' check (status in ('pending', 'collected', 'crashed')),
   payout numeric,
   resolved_multiplier numeric,
   started_at timestamptz not null default now(),
-  resolved_at timestamptz
+  resolved_at timestamptz,
+  -- True only for a round an admin ended via the emergency-stop "refund
+  -- all" action (src/app/api/games/crash/emergency-stop) — status is still
+  -- 'crashed' (never a win) but payout equals the full bet back rather
+  -- than a genuine outcome. See CrashRepository.emergencyStopAll.
+  voided boolean not null default false
 );
 
 create index if not exists crash_rounds_player_id_idx on crash_rounds (player_id);
+
+-- Admin-adjustable, global (not per-player) Multiplier Climb parameters —
+-- see src/lib/crash/engine.ts for the option sets/ranges these are
+-- validated against and supabaseCrashSettingsRepository.ts for how this
+-- singleton row is read/written. Changes only affect rounds started after
+-- the change — see crash_rounds.rtp/instant_crash_rate above.
+create table if not exists crash_settings (
+  id text primary key default 'default',
+  rtp numeric not null default 96,
+  instant_crash_rate numeric not null default 5,
+  min_bet numeric not null default 20,
+  max_bet numeric not null default 500,
+  updated_at timestamptz not null default now()
+);
+
+insert into crash_settings (id) values ('default') on conflict (id) do nothing;
 
 -- Slot machine spin log (see supabaseSlotsRepository.ts). The actual RNG
 -- outcome is decided client-side (unchanged game logic, see the mobile
@@ -179,6 +207,7 @@ alter table games enable row level security;
 alter table transactions enable row level security;
 alter table admin_profiles enable row level security;
 alter table crash_rounds enable row level security;
+alter table crash_settings enable row level security;
 alter table news enable row level security;
 alter table spin_history enable row level security;
 alter table app_content enable row level security;

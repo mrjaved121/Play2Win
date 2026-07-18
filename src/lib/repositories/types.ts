@@ -4,7 +4,10 @@ import type {
   AppContent,
   AppContentInput,
   CrashHistoryEntry,
+  CrashLeaderboard,
+  CrashLiveStatus,
   CrashRoundPublic,
+  CrashSettings,
   Game,
   GamePopularity,
   GameRoundEntry,
@@ -161,6 +164,32 @@ export interface CrashRepository {
     page: number;
     pageSize: number;
   }): Promise<Paginated<CrashHistoryEntry>>;
+
+  /** Platform-wide activity + top rounds — no guestId/accessToken, this isn't per-player. */
+  getLeaderboard(): Promise<CrashLeaderboard>;
+
+  /** Admin-only: every currently still-flying round across all players — backs the live round monitor. */
+  getLiveRounds(): Promise<CrashLiveStatus>;
+
+  /**
+   * Admin-only emergency stop: voids and fully refunds every currently
+   * still-flying round platform-wide (never a targeted win/loss for one
+   * player — see the doc comment on CrashRoundPublic.voided). Meant for
+   * "something's wrong, pause the game" situations, not for shaping any
+   * individual round's outcome.
+   */
+  emergencyStopAll(): Promise<{ voidedCount: number; refundedTotal: number }>;
+}
+
+/**
+ * Admin-adjustable global Multiplier Climb parameters — see
+ * src/lib/crash/engine.ts for validation rules and src/lib/types.ts's
+ * CrashSettings for field docs.
+ */
+export interface CrashSettingsRepository {
+  get(): Promise<CrashSettings>;
+  /** Validates against engine.ts's option sets/ranges (throws a plain, client-safe Error on failure) before persisting. */
+  update(patch: Partial<Pick<CrashSettings, "rtp" | "instantCrashRate" | "minBet" | "maxBet">>): Promise<CrashSettings>;
 }
 
 /**

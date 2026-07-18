@@ -69,7 +69,7 @@ export const GAME_DEFINITIONS: Array<{
   { name: "Supernova Poker", category: "table", rtp: 97.8, releaseDaysAgo: 120 },
   { name: "Dark Matter Dice", category: "table", rtp: 95.1, releaseDaysAgo: 75 },
   { name: "Wormhole Roulette", category: "table", rtp: 97.3, releaseDaysAgo: 30 },
-  { name: "Multiplier Climb", category: "arcade", rtp: 97.0, releaseDaysAgo: 5, appEntryPoint: "crash" },
+  { name: "Multiplier Climb", category: "arcade", rtp: 96.0, releaseDaysAgo: 5, appEntryPoint: "crash" },
   { name: "Lucky Wheel", category: "arcade", rtp: 92.0, releaseDaysAgo: 2, appEntryPoint: "wheel" },
   { name: "Scratch Card", category: "arcade", rtp: 92.4, releaseDaysAgo: 1, appEntryPoint: "scratch" },
 ];

@@ -5,6 +5,7 @@ import { mockNewsRepository } from "@/lib/mock/mockNewsRepository";
 import { mockAnalyticsRepository } from "@/lib/mock/mockAnalyticsRepository";
 import { mockAuthRepository } from "@/lib/mock/mockAuthRepository";
 import { mockCrashRepository } from "@/lib/mock/mockCrashRepository";
+import { mockCrashSettingsRepository } from "@/lib/mock/mockCrashSettingsRepository";
 import { mockSlotsRepository } from "@/lib/mock/mockSlotsRepository";
 import { mockAppContentRepository } from "@/lib/mock/mockAppContentRepository";
 import { mockGameRoundRepository } from "@/lib/mock/mockGameRoundRepository";
@@ -15,6 +16,7 @@ import { supabaseNewsRepository } from "@/lib/supabase/supabaseNewsRepository";
 import { supabaseAnalyticsRepository } from "@/lib/supabase/supabaseAnalyticsRepository";
 import { supabaseAuthRepository } from "@/lib/supabase/supabaseAuthRepository";
 import { supabaseCrashRepository } from "@/lib/supabase/supabaseCrashRepository";
+import { supabaseCrashSettingsRepository } from "@/lib/supabase/supabaseCrashSettingsRepository";
 import { supabaseSlotsRepository } from "@/lib/supabase/supabaseSlotsRepository";
 import { supabaseAppContentRepository } from "@/lib/supabase/supabaseAppContentRepository";
 import { supabaseGameRoundRepository } from "@/lib/supabase/supabaseGameRoundRepository";
@@ -23,6 +25,7 @@ import type {
   AppContentRepository,
   AuthRepository,
   CrashRepository,
+  CrashSettingsRepository,
   GameRoundRepository,
   GamesRepository,
   NewsRepository,
@@ -66,6 +69,10 @@ export function getAuthRepository(): AuthRepository {
 
 export function getCrashRepository(): CrashRepository {
   return isSupabaseDataSource() ? supabaseCrashRepository : mockCrashRepository;
+}
+
+export function getCrashSettingsRepository(): CrashSettingsRepository {
+  return isSupabaseDataSource() ? supabaseCrashSettingsRepository : mockCrashSettingsRepository;
 }
 
 export function getSlotsRepository(): SlotsRepository {
