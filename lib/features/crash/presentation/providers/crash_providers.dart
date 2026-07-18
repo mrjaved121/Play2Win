@@ -432,6 +432,15 @@ class CrashSlotNotifier extends Notifier<CrashSlotState> {
       _playSfx((result.round.resolvedMultiplier ?? 1.0) >= 5.0 ? SfxType.bigWin : SfxType.win);
       _continueAutoplay();
     } catch (error) {
+      // The server has no record of this round at all (as opposed to any
+      // other failure, e.g. a network hiccup, which stays retryable) —
+      // there's no outcome left to recover, so stop climbing forever with
+      // no way out. See _pollForCrash's identical case for how this round
+      // could go missing server-side in the first place.
+      if (error is CrashApiException && error.message == _roundNotFoundMessage) {
+        _abandonUnrecoverableRound();
+        return;
+      }
       state = state.copyWith(busy: false, errorMessage: _friendlyError(error));
     }
   }
@@ -466,9 +475,14 @@ class CrashSlotNotifier extends Notifier<CrashSlotState> {
   }
 
   /// Best-effort check for "it already crashed and I never tapped
-  /// Collect" — failures here are silently ignored (next tick retries)
-  /// rather than surfaced as a user-facing error, since this is a
-  /// background reconciliation, not something the player asked for.
+  /// Collect" — network-level failures here are silently ignored (next
+  /// tick retries) rather than surfaced as a user-facing error, since this
+  /// is a background reconciliation, not something the player asked for.
+  /// A confirmed 404 (`latest == null`, see [CrashRepository.fetchState]'s
+  /// doc comment) is different: the server has no record of this round at
+  /// all — never a transient/expected state for a round this client just
+  /// started and is actively polling — so retrying forever would just
+  /// leave the multiplier climbing with nothing that can ever stop it.
   Future<void> _pollForCrash() async {
     final CrashRound? round = state.round;
     if (round == null || state.phase != CrashPhase.running) return;
@@ -478,7 +492,11 @@ class CrashSlotNotifier extends Notifier<CrashSlotState> {
         roundId: round.roundId,
         accessToken: _accessToken,
       );
-      if (latest != null && latest.status == CrashRoundStatus.crashed) {
+      if (latest == null) {
+        _abandonUnrecoverableRound();
+        return;
+      }
+      if (latest.status == CrashRoundStatus.crashed) {
         _stopRoundTimers();
         state = state.copyWith(
           phase: CrashPhase.resolved,
@@ -492,6 +510,26 @@ class CrashSlotNotifier extends Notifier<CrashSlotState> {
     } catch (_) {
       // Ignored — see doc comment.
     }
+  }
+
+  static const String _roundNotFoundMessage = 'Round not found';
+
+  /// Stops the round outright when the server has no record of it — its
+  /// real win/loss outcome is unknowable at this point (not a loss, not a
+  /// win), so this neither pays out nor charges anything further; the bet
+  /// itself was already deducted up front when it was placed. Also cancels
+  /// autoplay, since blindly re-betting into whatever broke this round
+  /// would just repeat the problem.
+  void _abandonUnrecoverableRound() {
+    _stopRoundTimers();
+    state = state.copyWith(
+      phase: CrashPhase.idle,
+      clearRound: true,
+      displayMultiplier: 1.0,
+      busy: false,
+      errorMessage: 'Lost track of that round — it may have been interrupted server-side. Place a new bet to continue.',
+    );
+    setAutoplay(enabled: false);
   }
 
   /// Builds an optimistic history entry from a just-resolved round, so the
