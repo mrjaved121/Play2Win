@@ -19,7 +19,7 @@ import {
 /** multiplier(t) = e^(GROWTH_RATE * t), t in seconds since round start. */
 export const GROWTH_RATE = 0.13;
 
-export const STARTING_BALANCE = 50000;
+export const STARTING_BALANCE = 100;
 
 // Re-exported from settingsOptions.ts (not declared here) so a "use
 // client" component (the admin settings UI) can import the option
