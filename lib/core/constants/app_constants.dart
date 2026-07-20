@@ -6,7 +6,7 @@ abstract final class AppConstants {
   // ---------------------------------------------------------------------
   // Wallet / economy defaults
   // ---------------------------------------------------------------------
-  static const int startingBalance = 1000;
+  static const int startingBalance = 100;
   static const int minBet = 10;
   static const int maxBet = 500;
   static const int betStep = 10;

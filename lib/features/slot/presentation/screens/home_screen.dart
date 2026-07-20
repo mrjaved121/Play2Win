@@ -17,12 +17,12 @@ import '../../../../core/widgets/widgets.dart';
 import '../../../rewards/presentation/providers/daily_bonus_providers.dart';
 import '../../../wallet/domain/entities/wallet_transaction.dart';
 import '../../../wallet/presentation/providers/wallet_providers.dart';
+import '../../../wallet/presentation/widgets/buy_credits_sheet.dart';
 import '../../domain/entities/game_state.dart';
 import '../../game/coin_explosion_game.dart';
 import '../../game/slot_machine_controller.dart';
 import '../providers/game_providers.dart';
 import '../widgets/bet_controls.dart';
-import '../widgets/buy_credits_sheet.dart';
 import '../widgets/coin_explosion_overlay.dart';
 import '../widgets/compact_stats_bar.dart';
 import '../widgets/daily_bonus_card.dart';
@@ -550,7 +550,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
               turboOn: _turboOn,
               autoSpinActive: _autoSpinActive,
               autoSpinRemaining: _autoSpinActive ? _autoSpinRemaining : null,
-              onSpin: (game.bet <= game.balance || freeSpinActive) ? _onSpin : null,
+              // Always tappable (while not mid-spin) rather than gated on
+              // affordability — _onSpin already branches on that itself
+              // (spin / Low Balance / Out of Credits), and disabling the
+              // button here pre-empted all three, leaving an unaffordable
+              // tap look like it silently did nothing.
+              onSpin: _onSpin,
               onStopAutoSpin: _stopAutoSpin,
               onBetDecrement: (spinning || _autoSpinActive)
                   ? null

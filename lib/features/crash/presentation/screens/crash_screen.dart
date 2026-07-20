@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -5,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/config/api_config.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../core/widgets/widgets.dart';
+import '../../../wallet/presentation/widgets/buy_credits_sheet.dart';
 import '../providers/crash_providers.dart';
 import '../widgets/crash_bet_panel.dart';
 import '../widgets/crash_header.dart';
@@ -86,9 +89,9 @@ class CrashScreen extends ConsumerWidget {
                   const SizedBox(height: AppSpacing.sm),
                   SizedBox(height: 240, child: MultiplierStage(state: active)),
                   const SizedBox(height: AppSpacing.sm),
-                  _panelFor(ref, CrashSlotId.slot1, slot1, shared),
+                  _panelFor(context, ref, CrashSlotId.slot1, slot1, shared),
                   const SizedBox(height: AppSpacing.sm),
-                  _panelFor(ref, CrashSlotId.slot2, slot2, shared),
+                  _panelFor(context, ref, CrashSlotId.slot2, slot2, shared),
                   const SizedBox(height: AppSpacing.sm),
                   const PlatformStatsBar(),
                   const SizedBox(height: AppSpacing.sm),
@@ -108,15 +111,24 @@ class CrashScreen extends ConsumerWidget {
     );
   }
 
-  Widget _panelFor(WidgetRef ref, CrashSlotId id, CrashSlotState state, CrashSharedState shared) {
+  Widget _panelFor(BuildContext context, WidgetRef ref, CrashSlotId id, CrashSlotState state, CrashSharedState shared) {
     final CrashSlotNotifier notifier = ref.read(crashSlotProvider(id).notifier);
     return CrashBetPanel(
       state: state,
-      balance: shared.balance,
       minBet: shared.minBet,
       maxBet: shared.maxBet,
       onSetBet: notifier.setBet,
-      onPlaceBet: notifier.placeBet,
+      onPlaceBet: () {
+        // Only the harder "completely out" stop gets an interstitial (see
+        // BuyCreditsSheet's doc comment) — a player who could afford a
+        // smaller bet just doesn't get to place this one, same as before
+        // (CrashSlotNotifier.placeBet already no-ops on that case).
+        if (!state.canAfford(shared.balance) && (shared.balance ?? 0) <= 0) {
+          unawaited(showBuyCreditsSheet(context));
+          return;
+        }
+        notifier.placeBet();
+      },
       onCollect: notifier.collect,
       onPlayAgain: notifier.startNewRound,
       onSetAutoCashout: notifier.setAutoCashout,

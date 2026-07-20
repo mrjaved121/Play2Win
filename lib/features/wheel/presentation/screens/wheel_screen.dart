@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -8,6 +9,7 @@ import '../../../../core/config/api_config.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../core/widgets/widgets.dart';
+import '../../../wallet/presentation/widgets/buy_credits_sheet.dart';
 import '../../domain/entities/wheel_result.dart';
 import '../providers/wheel_providers.dart';
 import '../widgets/wheel_dial.dart';
@@ -45,6 +47,15 @@ class _WheelScreenState extends ConsumerState<WheelScreen> with SingleTickerProv
   }
 
   Future<void> _spin() async {
+    final WheelUiState current = ref.read(wheelProvider);
+    if (!current.canAffordBet) {
+      // Only the harder "completely out" stop gets an interstitial (see
+      // BuyCreditsSheet's doc comment) — a player who could afford a
+      // smaller bet just doesn't get to spin, same as before.
+      if ((current.balance ?? 0) <= 0) unawaited(showBuyCreditsSheet(context));
+      return;
+    }
+
     final WheelPlayResult? result = await ref.read(wheelProvider.notifier).spin();
     if (result == null || !mounted) return;
 
@@ -163,9 +174,12 @@ class _WheelScreenState extends ConsumerState<WheelScreen> with SingleTickerProv
                     subtitle: state.phase == WheelPhase.idle ? '${state.bet} CR' : null,
                     icon: Icons.casino_rounded,
                     size: GradientButtonSize.large,
-                    onPressed: state.canAffordBet && state.phase == WheelPhase.idle ? _spin : null,
+                    // Always tappable while idle (see _spin) rather than
+                    // gated on affordability, so an unaffordable tap can
+                    // still show the Out of Credits sheet instead of
+                    // silently doing nothing.
+                    onPressed: state.phase == WheelPhase.idle ? _spin : null,
                     loading: state.busy,
-                    enabled: state.canAffordBet,
                   ),
                 ],
               ),

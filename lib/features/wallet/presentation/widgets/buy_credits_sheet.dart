@@ -5,12 +5,14 @@ import '../../../../core/routing/route_names.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../core/widgets/widgets.dart';
 
-/// Shown when the player's balance has hit exactly 0 — distinct from
-/// [showLowBalanceSheet], which covers "can't quite cover this bet" and
-/// routes to the Store. Zero balance is a harder stop (no free-coin
-/// sources left to top it back up — see AppConstants.dailyBonusEnabled/
-/// missionsEnabled), so this routes to How to Buy instead, which is the
-/// one purchase-information screen this app actually has wired up.
+/// Shown when the player's balance has hit exactly 0, across every game
+/// that shares this concern (Slot, Multiplier Climb, Lucky Wheel, Scratch
+/// Card) — distinct from Slot's [showLowBalanceSheet], which covers "can't
+/// quite cover this bet" and routes to the Store. Zero balance is a harder
+/// stop (no free-coin sources left to top it back up — see AppConstants
+/// .dailyBonusEnabled/missionsEnabled), so this routes to How to Buy
+/// instead, which is the one purchase-information screen this app
+/// actually has wired up.
 Future<void> showBuyCreditsSheet(BuildContext context) {
   return showModalBottomSheet<void>(
     context: context,

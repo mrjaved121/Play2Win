@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,6 +8,7 @@ import '../../../../core/config/api_config.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../core/widgets/widgets.dart';
+import '../../../wallet/presentation/widgets/buy_credits_sheet.dart';
 import '../../domain/entities/scratch_result.dart';
 import '../providers/scratch_providers.dart';
 import '../widgets/scratch_history_strip.dart';
@@ -26,6 +29,15 @@ class _ScratchScreenState extends ConsumerState<ScratchScreen> {
   List<String> _panelSymbols = <String>['❔', '❔', '❔'];
 
   Future<void> _playAndReveal() async {
+    final ScratchUiState current = ref.read(scratchProvider);
+    if (!current.canAfford) {
+      // Only the harder "completely out" stop gets an interstitial (see
+      // BuyCreditsSheet's doc comment) — a player who could afford a
+      // cheaper card just doesn't get to buy, same as before.
+      if ((current.balance ?? 0) <= 0) unawaited(showBuyCreditsSheet(context));
+      return;
+    }
+
     final ScratchPlayResult? result = await ref.read(scratchProvider.notifier).buy();
     if (result == null || !mounted) return;
 
@@ -136,9 +148,12 @@ class _ScratchScreenState extends ConsumerState<ScratchScreen> {
                     subtitle: state.phase == ScratchPhase.idle ? '${state.cost} CR' : null,
                     icon: Icons.style_rounded,
                     size: GradientButtonSize.large,
-                    onPressed: state.canAfford && state.phase == ScratchPhase.idle ? _playAndReveal : null,
+                    // Always tappable while idle (see _playAndReveal)
+                    // rather than gated on affordability, so an
+                    // unaffordable tap can still show the Out of Credits
+                    // sheet instead of silently doing nothing.
+                    onPressed: state.phase == ScratchPhase.idle ? _playAndReveal : null,
                     loading: state.busy,
-                    enabled: state.canAfford,
                   ),
                 ],
               ),

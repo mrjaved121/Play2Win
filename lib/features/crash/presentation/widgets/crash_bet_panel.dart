@@ -18,7 +18,6 @@ import 'quick_bet_row.dart';
 class CrashBetPanel extends StatelessWidget {
   const CrashBetPanel({
     required this.state,
-    required this.balance,
     required this.minBet,
     required this.maxBet,
     required this.onSetBet,
@@ -32,11 +31,6 @@ class CrashBetPanel extends StatelessWidget {
   });
 
   final CrashSlotState state;
-
-  /// The shared balance (see [CrashSharedState]) — affordability is
-  /// checked against it here rather than on [CrashSlotState] itself, since
-  /// balance isn't per-panel.
-  final int? balance;
 
   /// Live admin-configured bet bounds (see [CrashSharedState.minBet]/`maxBet`)
   /// — not per-panel either, but threaded through explicitly (rather than
@@ -105,7 +99,7 @@ class CrashBetPanel extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
-              Expanded(child: _PlaceBetButton(state: state, balance: balance, onPressed: onPlaceBet)),
+              Expanded(child: _PlaceBetButton(state: state, onPressed: onPlaceBet)),
             ],
           ),
         ),
@@ -148,15 +142,17 @@ class CrashBetPanel extends StatelessWidget {
 /// grid's natural 2-row height via [IntrinsicHeight] instead of a fixed
 /// size preset.
 class _PlaceBetButton extends StatelessWidget {
-  const _PlaceBetButton({required this.state, required this.balance, required this.onPressed});
+  const _PlaceBetButton({required this.state, required this.onPressed});
 
   final CrashSlotState state;
-  final int? balance;
   final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
-    final bool enabled = state.canAfford(balance) && !state.busy;
+    // Always tappable while not busy — even when unaffordable — so
+    // [onPressed] (see CrashScreen._panelFor) can show the Out of Credits
+    // sheet instead of the tap silently doing nothing.
+    final bool enabled = !state.busy;
     return Opacity(
       opacity: enabled || state.busy ? 1 : 0.45,
       child: PressableScale(
