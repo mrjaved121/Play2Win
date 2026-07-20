@@ -156,9 +156,11 @@ export type NewNewsInput = {
 
 /**
  * Generic keyed singleton text content — one row per named piece of
- * app-wide copy. First use: `key: "purchase_instructions"` ("How to Buy
- * Credits"). Not a payment system — just admin-editable text the mobile
- * app displays as-is.
+ * app-wide copy, for content that's genuinely a single block (unlike
+ * PurchaseGuideEntry below, which is a managed list). Not currently used
+ * by any admin page — kept as reusable infrastructure for the next
+ * single-block content need. Not a payment system either way — just
+ * admin-editable text the mobile app displays as-is.
  */
 export interface AppContent {
   key: string;
@@ -169,6 +171,28 @@ export interface AppContent {
 }
 
 export type AppContentInput = {
+  title: string;
+  content: string;
+  isActive: boolean;
+};
+
+/**
+ * One "How to Buy Credits" entry (e.g. one payment method, or an FAQ
+ * item) — same list-of-entries shape as NewsItem, backing the admin
+ * How to Buy CMS and the mobile app's purchase-guide screen. Display-only
+ * content, same as NewsItem — not a payment system.
+ */
+export interface PurchaseGuideEntry {
+  id: string;
+  title: string;
+  content: string;
+  isActive: boolean;
+  displayOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type NewPurchaseGuideInput = {
   title: string;
   content: string;
   isActive: boolean;

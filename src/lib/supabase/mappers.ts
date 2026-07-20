@@ -1,5 +1,14 @@
 // snake_case (Postgres) <-> camelCase (app) row mappers for the Supabase adapters.
-import type { AppContent, Game, GameRoundEntry, NewsItem, Player, SlotSpinEntry, Transaction } from "@/lib/types";
+import type {
+  AppContent,
+  Game,
+  GameRoundEntry,
+  NewsItem,
+  Player,
+  PurchaseGuideEntry,
+  SlotSpinEntry,
+  Transaction,
+} from "@/lib/types";
 
 export function mapPlayerRow(row: Record<string, unknown>): Player {
   return {
@@ -64,6 +73,18 @@ export function mapGameRow(row: Record<string, unknown>): Game {
 }
 
 export function mapNewsRow(row: Record<string, unknown>): NewsItem {
+  return {
+    id: row.id as string,
+    title: row.title as string,
+    content: row.content as string,
+    isActive: Boolean(row.is_active),
+    displayOrder: Number(row.display_order),
+    createdAt: row.created_at as string,
+    updatedAt: row.updated_at as string,
+  };
+}
+
+export function mapPurchaseGuideRow(row: Record<string, unknown>): PurchaseGuideEntry {
   return {
     id: row.id as string,
     title: row.title as string,

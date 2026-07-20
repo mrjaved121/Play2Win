@@ -69,9 +69,12 @@ create table if not exists news (
 create index if not exists news_display_order_idx on news (display_order, created_at desc);
 
 -- Generic keyed singleton text content — one row per named piece of
--- app-wide copy, editable from admin. First use: 'purchase_instructions'
--- ("How to Buy Credits", src/app/dashboard/how-to-buy). Not a payment
--- system — just admin-editable text the mobile app displays as-is.
+-- app-wide copy, editable from admin. Not currently used by any admin
+-- page (see purchase_guides below for the "How to Buy" CMS, which needed
+-- a list of entries rather than one singleton block) — kept as reusable
+-- infrastructure for the next single-block content need. Not a payment
+-- system either way — just admin-editable text the mobile app displays
+-- as-is.
 create table if not exists app_content (
   id uuid primary key default gen_random_uuid(),
   key text unique not null,
@@ -81,6 +84,21 @@ create table if not exists app_content (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+-- Powers the admin "How to Buy" CMS: multiple purchase-method/FAQ entries
+-- shown in the mobile app, same shape/ordering as `news` above. Not a
+-- payment system — just admin-editable text (src/app/dashboard/how-to-buy).
+create table if not exists purchase_guides (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  content text not null,
+  is_active boolean not null default true,
+  display_order integer not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists purchase_guides_display_order_idx on purchase_guides (display_order, created_at desc);
 
 -- Multiplier Climb (crash game): players get an extra guest_id so the
 -- mobile app's public gameplay API (src/app/api/games/crash/*) can
@@ -212,6 +230,7 @@ alter table news enable row level security;
 alter table spin_history enable row level security;
 alter table app_content enable row level security;
 alter table game_rounds enable row level security;
+alter table purchase_guides enable row level security;
 
 -- After creating an admin user (Supabase Dashboard -> Authentication -> Add
 -- user, or supabase.auth.admin.createUser), provision them as an admin:

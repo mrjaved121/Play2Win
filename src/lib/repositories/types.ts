@@ -16,10 +16,12 @@ import type {
   KpiSummary,
   NewGameInput,
   NewNewsInput,
+  NewPurchaseGuideInput,
   NewsItem,
   Paginated,
   Player,
   PlayerStatus,
+  PurchaseGuideEntry,
   RetentionCohort,
   SlotSpinEntry,
   SlotStats,
@@ -74,6 +76,14 @@ export interface NewsRepository {
   list(): Promise<NewsItem[]>;
   create(input: NewNewsInput): Promise<NewsItem>;
   update(id: string, patch: Partial<NewsItem>): Promise<NewsItem>;
+  remove(id: string): Promise<void>;
+}
+
+/** Backs the admin "How to Buy" CMS (mobile-app purchase-guide entries) — same shape/pattern as NewsRepository. */
+export interface PurchaseGuideRepository {
+  list(): Promise<PurchaseGuideEntry[]>;
+  create(input: NewPurchaseGuideInput): Promise<PurchaseGuideEntry>;
+  update(id: string, patch: Partial<PurchaseGuideEntry>): Promise<PurchaseGuideEntry>;
   remove(id: string): Promise<void>;
 }
 

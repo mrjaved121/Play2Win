@@ -9,6 +9,7 @@ import { mockCrashSettingsRepository } from "@/lib/mock/mockCrashSettingsReposit
 import { mockSlotsRepository } from "@/lib/mock/mockSlotsRepository";
 import { mockAppContentRepository } from "@/lib/mock/mockAppContentRepository";
 import { mockGameRoundRepository } from "@/lib/mock/mockGameRoundRepository";
+import { mockPurchaseGuideRepository } from "@/lib/mock/mockPurchaseGuideRepository";
 import { supabasePlayersRepository } from "@/lib/supabase/supabasePlayersRepository";
 import { supabaseTransactionsRepository } from "@/lib/supabase/supabaseTransactionsRepository";
 import { supabaseGamesRepository } from "@/lib/supabase/supabaseGamesRepository";
@@ -20,6 +21,7 @@ import { supabaseCrashSettingsRepository } from "@/lib/supabase/supabaseCrashSet
 import { supabaseSlotsRepository } from "@/lib/supabase/supabaseSlotsRepository";
 import { supabaseAppContentRepository } from "@/lib/supabase/supabaseAppContentRepository";
 import { supabaseGameRoundRepository } from "@/lib/supabase/supabaseGameRoundRepository";
+import { supabasePurchaseGuideRepository } from "@/lib/supabase/supabasePurchaseGuideRepository";
 import type {
   AnalyticsRepository,
   AppContentRepository,
@@ -30,6 +32,7 @@ import type {
   GamesRepository,
   NewsRepository,
   PlayersRepository,
+  PurchaseGuideRepository,
   SlotsRepository,
   TransactionsRepository,
 } from "@/lib/repositories/types";
@@ -85,4 +88,8 @@ export function getAppContentRepository(): AppContentRepository {
 
 export function getGameRoundRepository(): GameRoundRepository {
   return isSupabaseDataSource() ? supabaseGameRoundRepository : mockGameRoundRepository;
+}
+
+export function getPurchaseGuideRepository(): PurchaseGuideRepository {
+  return isSupabaseDataSource() ? supabasePurchaseGuideRepository : mockPurchaseGuideRepository;
 }

@@ -5,6 +5,7 @@ import type {
   NewsItem,
   Player,
   PlayerStatus,
+  PurchaseGuideEntry,
   Transaction,
   TransactionStatus,
   TransactionType,
@@ -229,6 +230,57 @@ function buildNews(): NewsItem[] {
   });
 }
 
+const PURCHASE_GUIDE_DEFINITIONS: Array<{
+  title: string;
+  content: string;
+  isActive: boolean;
+  daysAgo: number;
+}> = [
+  {
+    title: "Bank Transfer",
+    content:
+      "Transfer to our research account (details available from support) and include your in-app Guest ID as the reference. Credits are added manually within one business day — this is a non-commercial research prototype, not a live payment processor.",
+    isActive: true,
+    daysAgo: 3,
+  },
+  {
+    title: "Mobile Wallet — JazzCash / EasyPaisa",
+    content:
+      "Send to the wallet number provided by support and share the transaction ID along with your Guest ID. Confirmation typically takes a few hours during business hours.",
+    isActive: true,
+    daysAgo: 3,
+  },
+  {
+    title: "Cryptocurrency",
+    content:
+      "USDT (TRC20) deposits are accepted for research participants outside standard banking hours. Contact support first to get a deposit address — never send funds to an address you haven't confirmed with us directly.",
+    isActive: true,
+    daysAgo: 3,
+  },
+  {
+    title: "Contact Support for Bulk Purchases",
+    content:
+      "Need a larger credit balance for extended testing? Reach out via Help & Support and we'll arrange it directly — no need to make multiple smaller purchases.",
+    isActive: true,
+    daysAgo: 2,
+  },
+];
+
+function buildPurchaseGuides(): PurchaseGuideEntry[] {
+  return PURCHASE_GUIDE_DEFINITIONS.map((def, i) => {
+    const timestamp = daysAgoIso(def.daysAgo, 0);
+    return {
+      id: `pg_${(i + 1).toString().padStart(3, "0")}`,
+      title: def.title,
+      content: def.content,
+      isActive: def.isActive,
+      displayOrder: i,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+  });
+}
+
 export const seedPlayers: Player[] = buildPlayers(340);
 export const seedGames: Game[] = buildGames();
 export const seedTransactions: Transaction[] = buildTransactions(
@@ -237,3 +289,4 @@ export const seedTransactions: Transaction[] = buildTransactions(
   2400,
 );
 export const seedNews: NewsItem[] = buildNews();
+export const seedPurchaseGuides: PurchaseGuideEntry[] = buildPurchaseGuides();
