@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/achievements/presentation/screens/achievements_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/crash/presentation/screens/crash_screen.dart';
+import '../../features/crossing/presentation/screens/crossing_screen.dart';
 import '../../features/leaderboard/presentation/screens/leaderboard_screen.dart';
 import '../../features/lobby/presentation/screens/lobby_screen.dart';
 import '../../features/missions/presentation/screens/missions_screen.dart';
@@ -115,6 +116,12 @@ abstract final class AppRouter {
         path: RoutePaths.playCrash,
         name: RouteNames.playCrash,
         builder: (_, _) => const CrashScreen(),
+      ),
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: RoutePaths.playCrossing,
+        name: RouteNames.playCrossing,
+        builder: (_, _) => const CrossingScreen(),
       ),
       GoRoute(
         parentNavigatorKey: rootNavigatorKey,

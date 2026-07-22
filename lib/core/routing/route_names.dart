@@ -18,6 +18,7 @@ abstract final class RouteNames {
   static const String achievements = 'achievements';
   static const String playSlots = 'playSlots';
   static const String playCrash = 'playCrash';
+  static const String playCrossing = 'playCrossing';
   static const String playWheel = 'playWheel';
   static const String playScratch = 'playScratch';
   static const String login = 'login';
@@ -40,6 +41,7 @@ abstract final class RoutePaths {
   static const String achievements = '/achievements';
   static const String playSlots = '/play/slots';
   static const String playCrash = '/play/crash';
+  static const String playCrossing = '/play/crossing';
   static const String playWheel = '/play/wheel';
   static const String playScratch = '/play/scratch';
   static const String login = '/login';

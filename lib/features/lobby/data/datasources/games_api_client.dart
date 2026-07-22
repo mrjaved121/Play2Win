@@ -36,6 +36,7 @@ class GamesApiClient {
     final String? routeName = switch (entryPoint) {
       'slots' => RouteNames.playSlots,
       'crash' => RouteNames.playCrash,
+      'crossing' => RouteNames.playCrossing,
       'wheel' => RouteNames.playWheel,
       'scratch' => RouteNames.playScratch,
       _ => null,

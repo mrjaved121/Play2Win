@@ -51,6 +51,7 @@ dependencies:
   supabase_flutter: ^2.10.5
   http: ^1.6.0
   uuid: ^4.6.0
+  crypto: ^3.0.7
 
 dev_dependencies:
   flutter_test:

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/config/api_config.dart';
+import '../../../../core/di/guest_identity_provider.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../core/widgets/widgets.dart';
 import '../../../crash/presentation/providers/crash_providers.dart';
@@ -100,7 +101,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         // dropped, same as a sync hiccup would be.
         final String? accessToken = repo.accessToken;
         if (ApiConfig.isConfigured && accessToken != null) {
-          final String guestId = ref.read(crashGuestIdProvider);
+          final String guestId = ref.read(guestIdProvider);
           unawaited(
             ref
                 .read(crashRepositoryProvider)

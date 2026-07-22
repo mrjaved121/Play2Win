@@ -1,12 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:uuid/uuid.dart';
 
 import '../../../../core/config/api_config.dart';
+import '../../../../core/di/guest_identity_provider.dart';
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/services/audio_service.dart';
-import '../../../../core/services/storage_service.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../data/datasources/crash_api_client.dart';
 import '../../data/repositories/http_crash_repository.dart';
@@ -21,20 +20,6 @@ final Provider<CrashApiClient> crashApiClientProvider = Provider<CrashApiClient>
 final Provider<CrashRepository> crashRepositoryProvider = Provider<CrashRepository>(
   (Ref ref) => HttpCrashRepository(ref.watch(crashApiClientProvider)),
 );
-
-/// Stable per-install id sent with every crash-game request instead of a
-/// login — generated once and persisted locally, same "Guest Mode" spirit
-/// as the rest of this app.
-final Provider<String> crashGuestIdProvider = Provider<String>((Ref ref) {
-  const String key = 'crash_guest_id';
-  final StorageService storage = getIt<StorageService>();
-  final String? existing = storage.get<String>(key);
-  if (existing != null) return existing;
-
-  final String created = const Uuid().v4();
-  unawaited(storage.put<String>(key, created));
-  return created;
-});
 
 enum CrashPhase { idle, running, resolved }
 
@@ -64,7 +49,7 @@ class CrashSharedState {
   final int? balance;
 
   /// The canonical `players.id` row admin sees in the dashboard — distinct
-  /// from [crashGuestIdProvider]'s value, which is only this device's
+  /// from [guestIdProvider]'s value, which is only this device's
   /// local lookup key. Null until the first successful balance fetch.
   final String? playerId;
   final bool balanceLoading;
@@ -129,7 +114,7 @@ class CrashSharedNotifier extends Notifier<CrashSharedState> {
     return CrashSharedState(balanceLoading: ApiConfig.isConfigured);
   }
 
-  String get _guestId => ref.read(crashGuestIdProvider);
+  String get _guestId => ref.read(guestIdProvider);
   CrashRepository get _repo => ref.read(crashRepositoryProvider);
   String? get _accessToken => ref.read(authRepositoryProvider)?.accessToken;
 
@@ -322,7 +307,7 @@ class CrashSlotNotifier extends Notifier<CrashSlotState> {
     return const CrashSlotState();
   }
 
-  String get _guestId => ref.read(crashGuestIdProvider);
+  String get _guestId => ref.read(guestIdProvider);
   CrashRepository get _repo => ref.read(crashRepositoryProvider);
 
   /// Sent with every request so a signed-in player's balance resolves by

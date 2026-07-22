@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/game_constants.dart';
+import '../../../../core/di/guest_identity_provider.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
-import '../../../crash/presentation/providers/crash_providers.dart' show crashGuestIdProvider;
 import '../../data/datasources/slots_api_client.dart';
 
 final Provider<SlotsApiClient> slotsApiClientProvider = Provider<SlotsApiClient>(
@@ -51,7 +51,7 @@ class SlotsSyncController {
     required List<String> symbols,
     required int clientBalance,
   }) {
-    final String guestId = _ref.read(crashGuestIdProvider);
+    final String guestId = _ref.read(guestIdProvider);
     final String? accessToken = _ref.read(authRepositoryProvider)?.accessToken;
     return _ref.read(slotsApiClientProvider).recordSpin(
           guestId: guestId,

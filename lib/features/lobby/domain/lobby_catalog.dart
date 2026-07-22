@@ -28,6 +28,15 @@ abstract final class LobbyCatalog {
       badgeLabel: 'NEW',
     ),
     GameCatalogEntry(
+      id: 'multiplier_crossing',
+      title: 'Multiplier Crossing',
+      icon: Icons.directions_walk_rounded,
+      accentColor: AppColors.success,
+      status: GameStatus.live,
+      routeName: RouteNames.playCrossing,
+      badgeLabel: 'NEW',
+    ),
+    GameCatalogEntry(
       id: 'lucky_wheel',
       title: 'Lucky Wheel',
       icon: Icons.donut_large_rounded,
