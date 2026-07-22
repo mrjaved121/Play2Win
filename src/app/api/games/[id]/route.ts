@@ -3,7 +3,7 @@ import { requireAdmin } from "@/lib/auth/requireAdmin";
 import { getGamesRepository } from "@/lib/repositories";
 import type { Game, GameEntryPoint } from "@/lib/types";
 
-const VALID_ENTRY_POINTS: GameEntryPoint[] = ["slots", "crash", "wheel", "scratch"];
+const VALID_ENTRY_POINTS: GameEntryPoint[] = ["slots", "crash", "wheel", "scratch", "crossing"];
 
 export async function PATCH(
   request: Request,

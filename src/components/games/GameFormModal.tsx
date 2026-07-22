@@ -20,6 +20,7 @@ const ENTRY_POINTS: Array<{ value: GameEntryPoint | ""; label: string }> = [
   { value: "crash", label: "Multiplier Climb" },
   { value: "wheel", label: "Lucky Wheel" },
   { value: "scratch", label: "Scratch Card" },
+  { value: "crossing", label: "Multiplier Crossing" },
 ];
 
 function toDateInputValue(iso: string): string {

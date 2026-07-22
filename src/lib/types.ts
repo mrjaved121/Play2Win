@@ -108,7 +108,7 @@ export interface Transaction {
 export type GameCategory = "slots" | "table" | "arcade" | "puzzle";
 export type GameStatus = "active" | "disabled" | "maintenance";
 /** Which built-in mobile-app screen this catalog entry plays as, if any — see the Lobby's public catalog feed. */
-export type GameEntryPoint = "slots" | "crash" | "wheel" | "scratch";
+export type GameEntryPoint = "slots" | "crash" | "wheel" | "scratch" | "crossing";
 
 export interface Game {
   id: string;
@@ -373,5 +373,119 @@ export interface CrashLiveStatus {
   activeBets: number;
   totalWagered: number;
   /** Server clock at response time — lets the admin UI compute "multiplier right now" without trusting its own clock. */
+  serverTime: string;
+}
+
+export type CrossingDifficulty = "easy" | "medium" | "hard" | "hardcore";
+export type CrossingRoundStatus = "pending" | "collected" | "busted";
+
+/**
+ * The full per-lane payout ladder for one difficulty tier — a pure function
+ * of (rtp, bustPct, laneCount), so unlike a crash point it holds no secret
+ * and is shown to the player before they bet (see engine.ts's buildLadder).
+ */
+export interface CrossingLadder {
+  difficulty: CrossingDifficulty;
+  laneCount: number;
+  bustPct: number;
+  /** ladder[i] = payout multiplier for surviving lane i+1. */
+  ladder: number[];
+}
+
+/**
+ * What a client is allowed to see about a round. `serverSeed` stays hidden
+ * until the round resolves (busted or collected) — at that point it doubles
+ * as the provably-fair reveal (verify: sha256(serverSeed) === serverSeedHash,
+ * and replaying engine.ts's isLaneBust for lanes 1..currentLane reproduces
+ * the exact survive/bust sequence this round actually played out).
+ */
+export interface CrossingRoundPublic {
+  roundId: string;
+  status: CrossingRoundStatus;
+  difficulty: CrossingDifficulty;
+  betAmount: number;
+  laneCount: number;
+  /** 0..laneCount — lanes survived so far. */
+  currentLane: number;
+  ladder: number[];
+  clientSeed: string;
+  serverSeedHash: string;
+  startedAt: string;
+  payout?: number;
+  resolvedMultiplier?: number;
+  serverSeed?: string;
+  /** The rtp/bustPct settings live when this round started — snapshotted so a later settings change can't retroactively change a past round's reveal. */
+  rtp?: number;
+  bustPct?: number;
+  /** See CrashRoundPublic.voided — same "admin emergency-stop refund", never a targeted individual outcome. */
+  voided?: boolean;
+}
+
+/** One resolved round in a player's history strip. Only ever `collected`/`busted` — a `pending` round has no outcome yet. */
+export interface CrossingHistoryEntry {
+  roundId: string;
+  bet: number;
+  difficulty: CrossingDifficulty;
+  lanesCleared: number;
+  /** Cashed-out multiplier if won, 0 if busted. */
+  multiplier: number;
+  winAmount: number;
+  isWin: boolean;
+  timestamp: string;
+  voided?: boolean;
+}
+
+/** One row in the platform-wide crossing leaderboard — no player id, just a display name. */
+export interface CrossingLeaderboardEntry {
+  playerName: string;
+  bet: number;
+  difficulty: CrossingDifficulty;
+  multiplier: number;
+  payout: number;
+}
+
+/** Platform-wide (not per-player) crossing activity — backs the mobile app's "live wins" ticker. */
+export interface CrossingLeaderboard {
+  totalBets: number;
+  totalWagered: number;
+  totalPayout: number;
+  topWins: CrossingLeaderboardEntry[];
+}
+
+/**
+ * Admin-adjustable, global (not per-player) Multiplier Crossing parameters —
+ * see src/lib/crossing/engine.ts for the option sets/ranges these are
+ * validated against. Changes only affect rounds started *after* the
+ * change; an in-flight round keeps the rtp/bustPct it was minted with
+ * (see CrossingRoundPublic).
+ */
+export interface CrossingSettings {
+  rtp: number;
+  minBet: number;
+  maxBet: number;
+  maxWin: number;
+  easyBustPct: number;
+  mediumBustPct: number;
+  hardBustPct: number;
+  hardcoreBustPct: number;
+  updatedAt: string;
+}
+
+/** One in-progress round, as shown in the admin "live round monitor" — a snapshot across all players' currently-pending rounds. */
+export interface CrossingLiveRoundEntry {
+  roundId: string;
+  playerId: string;
+  playerName: string;
+  difficulty: CrossingDifficulty;
+  betAmount: number;
+  currentLane: number;
+  laneCount: number;
+  startedAt: string;
+}
+
+export interface CrossingLiveStatus {
+  rounds: CrossingLiveRoundEntry[];
+  activeBets: number;
+  totalWagered: number;
   serverTime: string;
 }

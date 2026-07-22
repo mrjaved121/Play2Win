@@ -8,6 +8,12 @@ import type {
   CrashLiveStatus,
   CrashRoundPublic,
   CrashSettings,
+  CrossingDifficulty,
+  CrossingHistoryEntry,
+  CrossingLeaderboard,
+  CrossingLiveStatus,
+  CrossingRoundPublic,
+  CrossingSettings,
   Game,
   GamePopularity,
   GameRoundEntry,
@@ -200,6 +206,101 @@ export interface CrashSettingsRepository {
   get(): Promise<CrashSettings>;
   /** Validates against engine.ts's option sets/ranges (throws a plain, client-safe Error on failure) before persisting. */
   update(patch: Partial<Pick<CrashSettings, "rtp" | "instantCrashRate" | "minBet" | "maxBet">>): Promise<CrashSettings>;
+}
+
+/**
+ * Server-side implementation of Multiplier Crossing. The mobile app never
+ * decides whether a lane busts or what a round pays out — it only calls
+ * these operations and renders whatever they return. Unlike CrashRepository
+ * (continuous-time, client-rendered multiplier, single `collect`), a round
+ * here advances one lane at a time via explicit `advance` calls, since each
+ * lane's outcome must stay hidden until the server reveals it — see
+ * src/app/api/games/crossing/ for how these map to HTTP responses.
+ */
+export interface CrossingRepository {
+  /** Fetches (creating on first sight) the current balance — shares the same `players` row/credit_balance as CrashRepository. */
+  getOrCreatePlayerBalance(params: {
+    guestId: string;
+    accessToken?: string;
+  }): Promise<{ playerId: string; balance: number }>;
+
+  /**
+   * Deducts betAmount and starts a new round at the given difficulty.
+   * Rejects if this player already has a pending round — unlike crash,
+   * there's no "join an existing flight" concept, only one round in
+   * flight per player at a time.
+   */
+  placeBet(params: {
+    guestId: string;
+    betAmount: number;
+    difficulty: CrossingDifficulty;
+    clientSeed: string;
+    accessToken?: string;
+  }): Promise<{ round: CrossingRoundPublic; balance: number }>;
+
+  /**
+   * Reveals the outcome of exactly one lane (`currentLane + 1`). On bust,
+   * settles the round as a loss and reveals `serverSeed`. On survive,
+   * advances `currentLane` and, if that was the final lane, auto-resolves
+   * as a win at the ladder's last multiplier (revealing `serverSeed`) —
+   * otherwise leaves the round `pending` for another advance or a cashout.
+   */
+  advance(params: { guestId: string; roundId: string; accessToken?: string }): Promise<{
+    round: CrossingRoundPublic;
+    balance: number;
+  }>;
+
+  /** Cashes out at the current lane's multiplier. Requires currentLane >= 1. */
+  cashout(params: { guestId: string; roundId: string; accessToken?: string }): Promise<{
+    round: CrossingRoundPublic;
+    balance: number;
+  }>;
+
+  /** Reconciliation after the app backgrounds/reopens mid-round. */
+  getState(params: {
+    guestId: string;
+    roundId: string;
+    accessToken?: string;
+  }): Promise<CrossingRoundPublic | null>;
+
+  /** Same semantics as CrashRepository.linkAccount — promotes a guest row to an account row, merging balance. */
+  linkAccount(params: {
+    guestId: string;
+    userId: string;
+    email: string;
+    displayName?: string;
+  }): Promise<{ playerId: string; balance: number }>;
+
+  /** A player's past resolved rounds (collected or busted), most recent first. `pending` rounds are never included. */
+  getHistory(params: {
+    guestId: string;
+    accessToken?: string;
+    page: number;
+    pageSize: number;
+  }): Promise<Paginated<CrossingHistoryEntry>>;
+
+  /** Platform-wide activity — no guestId/accessToken, this isn't per-player. */
+  getLeaderboard(): Promise<CrossingLeaderboard>;
+
+  /** Admin-only: every currently-pending round across all players — backs the live round monitor. */
+  getLiveRounds(): Promise<CrossingLiveStatus>;
+
+  /** Admin-only emergency stop: voids and fully refunds every currently-pending round platform-wide. See CrashRepository.emergencyStopAll — same "never a targeted individual outcome" guarantee. */
+  emergencyStopAll(): Promise<{ voidedCount: number; refundedTotal: number }>;
+}
+
+/**
+ * Admin-adjustable global Multiplier Crossing parameters — see
+ * src/lib/crossing/engine.ts for validation rules.
+ */
+export interface CrossingSettingsRepository {
+  get(): Promise<CrossingSettings>;
+  /** Validates against engine.ts's option sets/ranges (throws a plain, client-safe Error on failure) before persisting. */
+  update(
+    patch: Partial<
+      Pick<CrossingSettings, "rtp" | "minBet" | "maxBet" | "maxWin" | "easyBustPct" | "mediumBustPct" | "hardBustPct" | "hardcoreBustPct">
+    >,
+  ): Promise<CrossingSettings>;
 }
 
 /**

@@ -35,7 +35,7 @@ create table if not exists games (
   -- Which built-in mobile-app screen this row plays as, if any. Null means
   -- a "coming soon" catalog entry with no real screen behind it yet. See
   -- src/app/api/public/games (the Lobby's catalog feed).
-  app_entry_point text check (app_entry_point in ('slots', 'crash', 'wheel', 'scratch'))
+  app_entry_point text check (app_entry_point in ('slots', 'crash', 'wheel', 'scratch', 'crossing'))
 );
 
 create table if not exists transactions (
@@ -171,6 +171,58 @@ create table if not exists crash_settings (
 
 insert into crash_settings (id) values ('default') on conflict (id) do nothing;
 
+-- Multiplier Crossing (road-crossing multiplier game): a single round is
+-- crossed one lane at a time (see src/app/api/games/crossing/advance) rather
+-- than crash's continuous-time flight, so there's no growth_rate/crash_point
+-- — instead each round snapshots the lane_count/bust_pct/rtp it was minted
+-- with (same rationale as crash_rounds.rtp) and tracks current_lane as the
+-- player advances. See src/lib/crossing/engine.ts for the provably-fair
+-- per-lane draw and src/lib/supabase/supabaseCrossingRepository.ts.
+create table if not exists crossing_rounds (
+  id uuid primary key default gen_random_uuid(),
+  player_id uuid not null references players(id) on delete cascade,
+  bet_amount numeric not null,
+  difficulty text not null check (difficulty in ('easy', 'medium', 'hard', 'hardcore')),
+  lane_count integer not null,
+  bust_pct numeric not null,
+  rtp numeric not null default 95,
+  client_seed text not null,
+  server_seed text not null,
+  server_seed_hash text not null,
+  -- 0 = no lane attempted yet; 1..lane_count = lanes survived so far.
+  current_lane integer not null default 0,
+  status text not null default 'pending' check (status in ('pending', 'collected', 'busted')),
+  payout numeric,
+  resolved_multiplier numeric,
+  started_at timestamptz not null default now(),
+  resolved_at timestamptz,
+  -- See crash_rounds.voided — an admin emergency-stop refund, never a
+  -- targeted individual outcome.
+  voided boolean not null default false
+);
+
+create index if not exists crossing_rounds_player_id_idx on crossing_rounds (player_id);
+
+-- Admin-adjustable, global (not per-player) Multiplier Crossing parameters —
+-- see src/lib/crossing/engine.ts for the option sets/ranges these are
+-- validated against. max_win is a new mechanism crash has no equivalent of:
+-- an absolute payout cap applied at cash-out/resolution time, independent of
+-- rtp (see supabaseCrossingRepository.ts).
+create table if not exists crossing_settings (
+  id text primary key default 'default',
+  rtp numeric not null default 95,
+  min_bet numeric not null default 20,
+  max_bet numeric not null default 500,
+  max_win numeric not null default 100000,
+  easy_bust_pct numeric not null default 6,
+  medium_bust_pct numeric not null default 9,
+  hard_bust_pct numeric not null default 13,
+  hardcore_bust_pct numeric not null default 20,
+  updated_at timestamptz not null default now()
+);
+
+insert into crossing_settings (id) values ('default') on conflict (id) do nothing;
+
 -- Slot machine spin log (see supabaseSlotsRepository.ts). The actual RNG
 -- outcome is decided client-side (unchanged game logic, see the mobile
 -- app's SpinEngine) — this table is the audit trail + balance ledger, not
@@ -226,6 +278,8 @@ alter table transactions enable row level security;
 alter table admin_profiles enable row level security;
 alter table crash_rounds enable row level security;
 alter table crash_settings enable row level security;
+alter table crossing_rounds enable row level security;
+alter table crossing_settings enable row level security;
 alter table news enable row level security;
 alter table spin_history enable row level security;
 alter table app_content enable row level security;

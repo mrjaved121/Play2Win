@@ -129,6 +129,16 @@ export default function GamesPage() {
                               <Activity className="size-4" />
                             </Link>
                           )}
+                          {game.appEntryPoint === "crossing" && (
+                            <Link
+                              href="/dashboard/games/crossing"
+                              aria-label="Live controls for Multiplier Crossing"
+                              title="Live controls"
+                              className="inline-flex size-8 items-center justify-center rounded-lg text-ink-secondary hover:bg-page hover:text-ink"
+                            >
+                              <Activity className="size-4" />
+                            </Link>
+                          )}
                           <button
                             onClick={() => {
                               setEditingGame(game);

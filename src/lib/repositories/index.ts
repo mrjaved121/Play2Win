@@ -6,6 +6,8 @@ import { mockAnalyticsRepository } from "@/lib/mock/mockAnalyticsRepository";
 import { mockAuthRepository } from "@/lib/mock/mockAuthRepository";
 import { mockCrashRepository } from "@/lib/mock/mockCrashRepository";
 import { mockCrashSettingsRepository } from "@/lib/mock/mockCrashSettingsRepository";
+import { mockCrossingRepository } from "@/lib/mock/mockCrossingRepository";
+import { mockCrossingSettingsRepository } from "@/lib/mock/mockCrossingSettingsRepository";
 import { mockSlotsRepository } from "@/lib/mock/mockSlotsRepository";
 import { mockAppContentRepository } from "@/lib/mock/mockAppContentRepository";
 import { mockGameRoundRepository } from "@/lib/mock/mockGameRoundRepository";
@@ -18,6 +20,8 @@ import { supabaseAnalyticsRepository } from "@/lib/supabase/supabaseAnalyticsRep
 import { supabaseAuthRepository } from "@/lib/supabase/supabaseAuthRepository";
 import { supabaseCrashRepository } from "@/lib/supabase/supabaseCrashRepository";
 import { supabaseCrashSettingsRepository } from "@/lib/supabase/supabaseCrashSettingsRepository";
+import { supabaseCrossingRepository } from "@/lib/supabase/supabaseCrossingRepository";
+import { supabaseCrossingSettingsRepository } from "@/lib/supabase/supabaseCrossingSettingsRepository";
 import { supabaseSlotsRepository } from "@/lib/supabase/supabaseSlotsRepository";
 import { supabaseAppContentRepository } from "@/lib/supabase/supabaseAppContentRepository";
 import { supabaseGameRoundRepository } from "@/lib/supabase/supabaseGameRoundRepository";
@@ -28,6 +32,8 @@ import type {
   AuthRepository,
   CrashRepository,
   CrashSettingsRepository,
+  CrossingRepository,
+  CrossingSettingsRepository,
   GameRoundRepository,
   GamesRepository,
   NewsRepository,
@@ -76,6 +82,14 @@ export function getCrashRepository(): CrashRepository {
 
 export function getCrashSettingsRepository(): CrashSettingsRepository {
   return isSupabaseDataSource() ? supabaseCrashSettingsRepository : mockCrashSettingsRepository;
+}
+
+export function getCrossingRepository(): CrossingRepository {
+  return isSupabaseDataSource() ? supabaseCrossingRepository : mockCrossingRepository;
+}
+
+export function getCrossingSettingsRepository(): CrossingSettingsRepository {
+  return isSupabaseDataSource() ? supabaseCrossingSettingsRepository : mockCrossingSettingsRepository;
 }
 
 export function getSlotsRepository(): SlotsRepository {

@@ -56,7 +56,7 @@ export const GAME_DEFINITIONS: Array<{
   rtp: number;
   releaseDaysAgo: number;
   /** Set only for catalog rows that back a real in-app screen. */
-  appEntryPoint?: "slots" | "crash" | "wheel" | "scratch";
+  appEntryPoint?: "slots" | "crash" | "wheel" | "scratch" | "crossing";
 }> = [
   { name: "Nova Slots", category: "slots", rtp: 96.2, releaseDaysAgo: 540, appEntryPoint: "slots" },
   { name: "Event Horizon", category: "slots", rtp: 95.4, releaseDaysAgo: 460 },
@@ -73,6 +73,7 @@ export const GAME_DEFINITIONS: Array<{
   { name: "Multiplier Climb", category: "arcade", rtp: 95.0, releaseDaysAgo: 5, appEntryPoint: "crash" },
   { name: "Lucky Wheel", category: "arcade", rtp: 92.0, releaseDaysAgo: 2, appEntryPoint: "wheel" },
   { name: "Scratch Card", category: "arcade", rtp: 92.4, releaseDaysAgo: 1, appEntryPoint: "scratch" },
+  { name: "Multiplier Crossing", category: "arcade", rtp: 95.0, releaseDaysAgo: 0, appEntryPoint: "crossing" },
 ];
 
 function buildPlayers(count: number): Player[] {

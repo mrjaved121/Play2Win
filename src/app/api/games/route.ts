@@ -5,7 +5,7 @@ import type { GameCategory, GameEntryPoint, GameStatus, NewGameInput } from "@/l
 
 const VALID_CATEGORIES: GameCategory[] = ["slots", "table", "arcade", "puzzle"];
 const VALID_STATUSES: GameStatus[] = ["active", "disabled", "maintenance"];
-const VALID_ENTRY_POINTS: GameEntryPoint[] = ["slots", "crash", "wheel", "scratch"];
+const VALID_ENTRY_POINTS: GameEntryPoint[] = ["slots", "crash", "wheel", "scratch", "crossing"];
 
 export async function GET() {
   const auth = await requireAdmin();
